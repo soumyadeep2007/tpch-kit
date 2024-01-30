@@ -1,70 +1,126 @@
--- Sccsid:     @(#)dss.ddl	2.1.8.1
-CREATE TABLE NATION  ( N_NATIONKEY  INTEGER NOT NULL,
-                            N_NAME       CHAR(25) NOT NULL,
-                            N_REGIONKEY  INTEGER NOT NULL,
-                            N_COMMENT    VARCHAR(152));
+CREATE TABLE customer (
+    c_custkey integer,
+    c_name character varying(25),
+    c_address character varying(40),
+    c_nationkey integer,
+    c_phone character(15),
+    c_acctbal numeric(15,2),
+    c_mktsegment character(10),
+    c_comment character varying(117)
+) DISTRIBUTED BY (c_custkey);
 
-CREATE TABLE REGION  ( R_REGIONKEY  INTEGER NOT NULL,
-                            R_NAME       CHAR(25) NOT NULL,
-                            R_COMMENT    VARCHAR(152));
 
-CREATE TABLE PART  ( P_PARTKEY     INTEGER NOT NULL,
-                          P_NAME        VARCHAR(55) NOT NULL,
-                          P_MFGR        CHAR(25) NOT NULL,
-                          P_BRAND       CHAR(10) NOT NULL,
-                          P_TYPE        VARCHAR(25) NOT NULL,
-                          P_SIZE        INTEGER NOT NULL,
-                          P_CONTAINER   CHAR(10) NOT NULL,
-                          P_RETAILPRICE DECIMAL(15,2) NOT NULL,
-                          P_COMMENT     VARCHAR(23) NOT NULL );
+--
+-- TOC entry 405 (class 1259 OID 18344)
+-- Name: lineitem; Type: TABLE; Schema: tpch; Owner: -
+--
 
-CREATE TABLE SUPPLIER ( S_SUPPKEY     INTEGER NOT NULL,
-                             S_NAME        CHAR(25) NOT NULL,
-                             S_ADDRESS     VARCHAR(40) NOT NULL,
-                             S_NATIONKEY   INTEGER NOT NULL,
-                             S_PHONE       CHAR(15) NOT NULL,
-                             S_ACCTBAL     DECIMAL(15,2) NOT NULL,
-                             S_COMMENT     VARCHAR(101) NOT NULL);
+CREATE TABLE lineitem (
+    l_orderkey bigint,
+    l_partkey integer,
+    l_suppkey integer,
+    l_linenumber integer,
+    l_quantity numeric(15,2),
+    l_extendedprice numeric(15,2),
+    l_discount numeric(15,2),
+    l_tax numeric(15,2),
+    l_returnflag character(1),
+    l_linestatus character(1),
+    l_shipdate date,
+    l_commitdate date,
+    l_receiptdate date,
+    l_shipinstruct character(25),
+    l_shipmode character(10),
+    l_comment character varying(44)
+) DISTRIBUTED BY (l_orderkey, l_linenumber);
 
-CREATE TABLE PARTSUPP ( PS_PARTKEY     INTEGER NOT NULL,
-                             PS_SUPPKEY     INTEGER NOT NULL,
-                             PS_AVAILQTY    INTEGER NOT NULL,
-                             PS_SUPPLYCOST  DECIMAL(15,2)  NOT NULL,
-                             PS_COMMENT     VARCHAR(199) NOT NULL );
 
-CREATE TABLE CUSTOMER ( C_CUSTKEY     INTEGER NOT NULL,
-                             C_NAME        VARCHAR(25) NOT NULL,
-                             C_ADDRESS     VARCHAR(40) NOT NULL,
-                             C_NATIONKEY   INTEGER NOT NULL,
-                             C_PHONE       CHAR(15) NOT NULL,
-                             C_ACCTBAL     DECIMAL(15,2)   NOT NULL,
-                             C_MKTSEGMENT  CHAR(10) NOT NULL,
-                             C_COMMENT     VARCHAR(117) NOT NULL);
+--
+-- TOC entry 393 (class 1259 OID 17211)
+-- Name: nation; Type: TABLE; Schema: tpch; Owner: -
+--
 
-CREATE TABLE ORDERS  ( O_ORDERKEY       INTEGER NOT NULL,
-                           O_CUSTKEY        INTEGER NOT NULL,
-                           O_ORDERSTATUS    CHAR(1) NOT NULL,
-                           O_TOTALPRICE     DECIMAL(15,2) NOT NULL,
-                           O_ORDERDATE      DATE NOT NULL,
-                           O_ORDERPRIORITY  CHAR(15) NOT NULL,  
-                           O_CLERK          CHAR(15) NOT NULL, 
-                           O_SHIPPRIORITY   INTEGER NOT NULL,
-                           O_COMMENT        VARCHAR(79) NOT NULL);
+CREATE TABLE nation (
+    n_nationkey integer,
+    n_name character(25),
+    n_regionkey integer,
+    n_comment character varying(152)
+) DISTRIBUTED BY (n_nationkey);
 
-CREATE TABLE LINEITEM ( L_ORDERKEY    INTEGER NOT NULL,
-                             L_PARTKEY     INTEGER NOT NULL,
-                             L_SUPPKEY     INTEGER NOT NULL,
-                             L_LINENUMBER  INTEGER NOT NULL,
-                             L_QUANTITY    DECIMAL(15,2) NOT NULL,
-                             L_EXTENDEDPRICE  DECIMAL(15,2) NOT NULL,
-                             L_DISCOUNT    DECIMAL(15,2) NOT NULL,
-                             L_TAX         DECIMAL(15,2) NOT NULL,
-                             L_RETURNFLAG  CHAR(1) NOT NULL,
-                             L_LINESTATUS  CHAR(1) NOT NULL,
-                             L_SHIPDATE    DATE NOT NULL,
-                             L_COMMITDATE  DATE NOT NULL,
-                             L_RECEIPTDATE DATE NOT NULL,
-                             L_SHIPINSTRUCT CHAR(25) NOT NULL,
-                             L_SHIPMODE     CHAR(10) NOT NULL,
-                             L_COMMENT      VARCHAR(44) NOT NULL);
 
+--
+-- TOC entry 406 (class 1259 OID 18347)
+-- Name: orders; Type: TABLE; Schema: tpch; Owner: -
+--
+
+CREATE TABLE orders (
+    o_orderkey bigint,
+    o_custkey integer,
+    o_orderstatus character(1),
+    o_totalprice numeric(15,2),
+    o_orderdate date,
+    o_orderpriority character(15),
+    o_clerk character(15),
+    o_shippriority integer,
+    o_comment character varying(79)
+) DISTRIBUTED BY (o_orderkey);
+
+
+--
+-- TOC entry 407 (class 1259 OID 18350)
+-- Name: part; Type: TABLE; Schema: tpch; Owner: -
+--
+
+CREATE TABLE part (
+    p_partkey integer,
+    p_name character varying(55),
+    p_mfgr character(25),
+    p_brand character(10),
+    p_type character varying(25),
+    p_size integer,
+    p_container character(10),
+    p_retailprice numeric(15,2),
+    p_comment character varying(23)
+) DISTRIBUTED BY (p_partkey);
+
+
+--
+-- TOC entry 394 (class 1259 OID 17481)
+-- Name: partsupp; Type: TABLE; Schema: tpch; Owner: -
+--
+
+CREATE TABLE partsupp (
+    ps_partkey integer,
+    ps_suppkey integer,
+    ps_availqty integer,
+    ps_supplycost numeric(15,2),
+    ps_comment character varying(199)
+) DISTRIBUTED BY (ps_partkey, ps_suppkey);
+
+
+--
+-- TOC entry 395 (class 1259 OID 17484)
+-- Name: region; Type: TABLE; Schema: tpch; Owner: -
+--
+
+CREATE TABLE region (
+    r_regionkey integer,
+    r_name character(25),
+    r_comment character varying(152)
+) DISTRIBUTED BY (r_regionkey);
+
+
+--
+-- TOC entry 396 (class 1259 OID 17487)
+-- Name: supplier; Type: TABLE; Schema: tpch; Owner: -
+--
+
+CREATE TABLE supplier (
+    s_suppkey integer,
+    s_name character(25),
+    s_address character varying(40),
+    s_nationkey integer,
+    s_phone character(15),
+    s_acctbal numeric(15,2),
+    s_comment character varying(101)
+) DISTRIBUTED BY (s_suppkey);
