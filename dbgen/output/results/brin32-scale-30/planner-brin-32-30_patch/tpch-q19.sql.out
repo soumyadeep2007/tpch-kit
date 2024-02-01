@@ -1,0 +1,48 @@
+                                                                                                                                                                                                                                                                                                                                                                           QUERY PLAN                                                                                                                                                                                                                                                                                                                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=1761045.32..1761045.33 rows=1 width=32) (actual time=54778.704..54778.710 rows=1 loops=1)
+   ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=1761045.26..1761045.31 rows=3 width=32) (actual time=54562.905..54778.679 rows=3 loops=1)
+         ->  Partial Aggregate  (cost=1761045.26..1761045.27 rows=1 width=32) (actual time=54559.707..54559.709 rows=1 loops=1)
+               ->  Hash Join  (cost=1204875.47..1761019.45 rows=3440 width=12) (actual time=13623.666..54555.902 rows=1190 loops=1)
+                     Hash Cond: (lineitem.l_partkey = part.p_partkey)
+                     Join Filter: (((part.p_brand = 'Brand#15'::bpchar) AND (part.p_container = ANY ('{"SM CASE","SM BOX","SM PACK","SM PKG"}'::bpchar[])) AND (lineitem.l_quantity >= '4'::numeric) AND (lineitem.l_quantity <= '14'::numeric) AND (part.p_size <= 5)) OR ((part.p_brand = 'Brand#24'::bpchar) AND (part.p_container = ANY ('{"MED BAG","MED BOX","MED PKG","MED PACK"}'::bpchar[])) AND (lineitem.l_quantity >= '11'::numeric) AND (lineitem.l_quantity <= '21'::numeric) AND (part.p_size <= 10)) OR ((part.p_brand = 'Brand#51'::bpchar) AND (part.p_container = ANY ('{"LG CASE","LG BOX","LG PACK","LG PKG"}'::bpchar[])) AND (lineitem.l_quantity >= '22'::numeric) AND (lineitem.l_quantity <= '32'::numeric) AND (part.p_size <= 15)))
+                     Rows Removed by Join Filter: 1879
+                     Extra Text: (seg0)   Hash chain length 1.2 avg, 6 max, using 11840 of 32768 buckets.
+                     ->  Bitmap Heap Scan on lineitem  (cost=1194905.40..1741849.16 rows=3491741 width=21) (actual time=12996.867..53570.213 rows=1243519 loops=1)
+                           Recheck Cond: (l_shipmode = ANY ('{AIR,"AIR REG"}'::bpchar[]))
+                           Rows Removed by Index Recheck: 50747742
+                           Filter: ((l_shipinstruct = 'DELIVER IN PERSON'::bpchar) AND (((l_quantity >= '4'::numeric) AND (l_quantity <= '14'::numeric)) OR ((l_quantity >= '11'::numeric) AND (l_quantity <= '21'::numeric)) OR ((l_quantity >= '22'::numeric) AND (l_quantity <= '32'::numeric))))
+                           Rows Removed by Filter: 7330406
+                           ->  Bitmap Index Scan on lineitem_l_partkey_l_quantity_l_shipmode_idx  (cost=0.00..1194032.46 rows=8691692 width=0) (actual time=12995.592..12995.592 rows=8573925 loops=1)
+                                 Index Cond: (l_shipmode = ANY ('{AIR,"AIR REG"}'::bpchar[]))
+                     ->  Hash  (cost=9794.37..9794.37 rows=14056 width=30) (actual time=608.403..608.404 rows=14602 loops=1)
+                           Buckets: 32768  Batches: 1  Memory Usage: 1169kB
+                           ->  Broadcast Motion 3:3  (slice2; segments: 3)  (cost=1158.39..9794.37 rows=14056 width=30) (actual time=303.292..604.970 rows=14602 loops=1)
+                                 ->  Bitmap Heap Scan on part  (cost=1158.39..9606.96 rows=4685 width=30) (actual time=294.878..603.725 rows=4917 loops=1)
+                                       Recheck Cond: (((p_size <= 5) AND (p_size >= 1) AND (p_container = ANY ('{"SM CASE","SM BOX","SM PACK","SM PKG"}'::bpchar[])) AND (p_brand = 'Brand#15'::bpchar)) OR ((p_size <= 10) AND (p_size >= 1) AND (p_container = ANY ('{"MED BAG","MED BOX","MED PKG","MED PACK"}'::bpchar[])) AND (p_brand = 'Brand#24'::bpchar)) OR ((p_size <= 15) AND (p_size >= 1) AND (p_container = ANY ('{"LG CASE","LG BOX","LG PACK","LG PKG"}'::bpchar[])) AND (p_brand = 'Brand#51'::bpchar)))
+                                       Rows Removed by Index Recheck: 454857
+                                       ->  BitmapOr  (cost=1158.39..1158.39 rows=4700 width=0) (actual time=292.563..292.566 rows=1 loops=1)
+                                             ->  BitmapAnd  (cost=379.95..379.95 rows=793 width=0) (actual time=106.857..106.858 rows=1 loops=1)
+                                                   ->  Bitmap Index Scan on part_p_size_idx  (cost=0.00..12.77 rows=201680 width=0) (actual time=3.262..3.262 rows=10240 loops=1)
+                                                         Index Cond: ((p_size <= 5) AND (p_size >= 1))
+                                                   ->  Bitmap Index Scan on part_p_container_p_brand_p_partkey_idx  (cost=0.00..364.59 rows=7863 width=0) (actual time=96.997..96.997 rows=8071 loops=1)
+                                                         Index Cond: ((p_container = ANY ('{"SM CASE","SM BOX","SM PACK","SM PKG"}'::bpchar[])) AND (p_brand = 'Brand#15'::bpchar))
+                                             ->  BitmapAnd  (cost=377.25..377.25 rows=1538 width=0) (actual time=85.063..85.064 rows=1 loops=1)
+                                                   ->  Bitmap Index Scan on part_p_size_idx  (cost=0.00..13.51 rows=397058 width=0) (actual time=0.670..0.670 rows=20480 loops=1)
+                                                         Index Cond: ((p_size <= 10) AND (p_size >= 1))
+                                                   ->  Bitmap Index Scan on part_p_container_p_brand_p_partkey_idx  (cost=0.00..361.15 rows=7748 width=0) (actual time=77.902..77.902 rows=8048 loops=1)
+                                                         Index Cond: ((p_container = ANY ('{"MED BAG","MED BOX","MED PKG","MED PACK"}'::bpchar[])) AND (p_brand = 'Brand#24'::bpchar))
+                                             ->  BitmapAnd  (cost=400.69..400.69 rows=2369 width=0) (actual time=96.341..96.342 rows=1 loops=1)
+                                                   ->  Bitmap Index Scan on part_p_size_idx  (cost=0.00..14.26 rows=594537 width=0) (actual time=0.682..0.682 rows=30720 loops=1)
+                                                         Index Cond: ((p_size <= 15) AND (p_size >= 1))
+                                                   ->  Bitmap Index Scan on part_p_container_p_brand_p_partkey_idx  (cost=0.00..383.83 rows=7970 width=0) (actual time=85.791..85.791 rows=8197 loops=1)
+                                                         Index Cond: ((p_container = ANY ('{"LG CASE","LG BOX","LG PACK","LG PKG"}'::bpchar[])) AND (p_brand = 'Brand#51'::bpchar))
+ Optimizer: Postgres query optimizer
+ Planning Time: 24.583 ms
+   (slice0)    Executor memory: 273K bytes.
+   (slice1)    Executor memory: 4657020K bytes avg x 3 workers, 4657046K bytes max (seg2).  Work_mem: 1169K bytes max.
+   (slice2)    Executor memory: 102663K bytes avg x 3 workers, 102663K bytes max (seg0).
+ Memory used:  128000kB
+ Execution Time: 55948.744 ms
+(44 rows)
+

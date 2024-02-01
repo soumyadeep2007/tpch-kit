@@ -1,0 +1,28 @@
+                                                                                                                                                                                                                                                                                                                                                                           QUERY PLAN                                                                                                                                                                                                                                                                                                                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=2188330.79..2188330.80 rows=1 width=32) (actual time=40862.815..40862.817 rows=1 loops=1)
+   ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=2188330.73..2188330.78 rows=3 width=32) (actual time=40523.140..40862.765 rows=3 loops=1)
+         ->  Partial Aggregate  (cost=2188330.73..2188330.74 rows=1 width=32) (actual time=40861.230..40861.231 rows=1 loops=1)
+               ->  Hash Join  (cost=94930.88..2188304.66 rows=3475 width=12) (actual time=1250.937..40857.535 rows=1190 loops=1)
+                     Hash Cond: (lineitem.l_partkey = part.p_partkey)
+                     Join Filter: (((part.p_brand = 'Brand#15'::bpchar) AND (part.p_container = ANY ('{"SM CASE","SM BOX","SM PACK","SM PKG"}'::bpchar[])) AND (lineitem.l_quantity >= '4'::numeric) AND (lineitem.l_quantity <= '14'::numeric) AND (part.p_size <= 5)) OR ((part.p_brand = 'Brand#24'::bpchar) AND (part.p_container = ANY ('{"MED BAG","MED BOX","MED PKG","MED PACK"}'::bpchar[])) AND (lineitem.l_quantity >= '11'::numeric) AND (lineitem.l_quantity <= '21'::numeric) AND (part.p_size <= 10)) OR ((part.p_brand = 'Brand#51'::bpchar) AND (part.p_container = ANY ('{"LG CASE","LG BOX","LG PACK","LG PKG"}'::bpchar[])) AND (lineitem.l_quantity >= '22'::numeric) AND (lineitem.l_quantity <= '32'::numeric) AND (part.p_size <= 15)))
+                     Rows Removed by Join Filter: 1879
+                     Extra Text: (seg0)   Hash chain length 1.0 avg, 3 max, using 14225 of 262144 buckets.
+                     ->  Seq Scan on lineitem  (cost=0.00..2084411.68 rows=3415383 width=21) (actual time=0.518..39327.060 rows=1243519 loops=1)
+                           Filter: ((l_shipmode = ANY ('{AIR,"AIR REG"}'::bpchar[])) AND (l_shipinstruct = 'DELIVER IN PERSON'::bpchar) AND (((l_quantity >= '4'::numeric) AND (l_quantity <= '14'::numeric)) OR ((l_quantity >= '11'::numeric) AND (l_quantity <= '21'::numeric)) OR ((l_quantity >= '22'::numeric) AND (l_quantity <= '32'::numeric))))
+                           Rows Removed by Filter: 58759791
+                     ->  Hash  (cost=94748.04..94748.04 rows=14628 width=30) (actual time=1222.840..1222.841 rows=14602 loops=1)
+                           Buckets: 262144  Batches: 1  Memory Usage: 2961kB
+                           ->  Broadcast Motion 3:3  (slice2; segments: 3)  (cost=0.00..94748.04 rows=14628 width=30) (actual time=8.492..1217.262 rows=14602 loops=1)
+                                 ->  Seq Scan on part  (cost=0.00..94553.00 rows=4876 width=30) (actual time=0.646..1219.887 rows=4917 loops=1)
+                                       Filter: ((p_size >= 1) AND (((p_brand = 'Brand#15'::bpchar) AND (p_container = ANY ('{"SM CASE","SM BOX","SM PACK","SM PKG"}'::bpchar[])) AND (p_size <= 5)) OR ((p_brand = 'Brand#24'::bpchar) AND (p_container = ANY ('{"MED BAG","MED BOX","MED PKG","MED PACK"}'::bpchar[])) AND (p_size <= 10)) OR ((p_brand = 'Brand#51'::bpchar) AND (p_container = ANY ('{"LG CASE","LG BOX","LG PACK","LG PKG"}'::bpchar[])) AND (p_size <= 15))))
+                                       Rows Removed by Filter: 1994517
+ Optimizer: Postgres-based planner
+ Planning Time: 3.812 ms
+   (slice0)    Executor memory: 84K bytes.
+   (slice1)    Executor memory: 3205K bytes avg x 3 workers, 3205K bytes max (seg0).  Work_mem: 2961K bytes max.
+   (slice2)    Executor memory: 202K bytes avg x 3 workers, 202K bytes max (seg0).
+ Memory used:  128000kB
+ Execution Time: 40870.017 ms
+(24 rows)
+

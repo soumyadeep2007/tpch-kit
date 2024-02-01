@@ -1,0 +1,44 @@
+                                                                                        QUERY PLAN                                                                                        
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=1779737.44..1779737.50 rows=25 width=58)
+   Sort Key: (sum((lineitem.l_extendedprice * ('1'::numeric - lineitem.l_discount)))) DESC
+   ->  Finalize GroupAggregate  (cost=1778828.11..1779736.86 rows=25 width=58)
+         Group Key: nation.n_name
+         ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=1778828.11..1779735.98 rows=75 width=58)
+               Merge Key: nation.n_name
+               ->  Partial GroupAggregate  (cost=1778828.11..1779734.98 rows=25 width=58)
+                     Group Key: nation.n_name
+                     ->  Sort  (cost=1778828.11..1779009.43 rows=72525 width=38)
+                           Sort Key: nation.n_name
+                           ->  Hash Join  (cost=429430.80..1772973.13 rows=72525 width=38)
+                                 Hash Cond: ((lineitem.l_suppkey = supplier.s_suppkey) AND (customer.c_nationkey = supplier.s_nationkey))
+                                 ->  Hash Join  (cost=419423.80..1752722.75 rows=1812977 width=50)
+                                       Hash Cond: (lineitem.l_orderkey = orders.o_orderkey)
+                                       ->  Seq Scan on lineitem  (cost=0.00..884422.56 rows=59999456 width=24)
+                                       ->  Hash  (cost=399438.98..399438.98 rows=1359745 width=42)
+                                             ->  Broadcast Motion 3:3  (slice2; segments: 3)  (cost=35717.30..399438.98 rows=1359745 width=42)
+                                                   ->  Hash Join  (cost=35717.30..381309.04 rows=453248 width=42)
+                                                         Hash Cond: (orders.o_custkey = customer.c_custkey)
+                                                         ->  Redistribute Motion 3:3  (slice3; segments: 3)  (cost=0.00..332560.85 rows=2266242 width=12)
+                                                               Hash Key: orders.o_custkey
+                                                               ->  Seq Scan on orders  (cost=0.00..287236.00 rows=2266242 width=12)
+                                                                     Filter: ((o_orderdate >= '1995-01-01'::date) AND (o_orderdate < '1996-01-01 00:00:00'::timestamp without time zone))
+                                                         ->  Hash  (cost=31967.30..31967.30 rows=300000 width=38)
+                                                               ->  Hash Join  (cost=2.30..31967.30 rows=300000 width=38)
+                                                                     Hash Cond: (customer.c_nationkey = nation.n_nationkey)
+                                                                     ->  Seq Scan on customer  (cost=0.00..23340.00 rows=1500000 width=8)
+                                                                     ->  Hash  (cost=2.24..2.24 rows=5 width=30)
+                                                                           ->  Broadcast Motion 3:3  (slice4; segments: 3)  (cost=1.05..2.24 rows=5 width=30)
+                                                                                 ->  Hash Join  (cost=1.05..2.18 rows=2 width=30)
+                                                                                       Hash Cond: (nation.n_regionkey = region.r_regionkey)
+                                                                                       ->  Seq Scan on nation  (cost=0.00..1.08 rows=8 width=34)
+                                                                                       ->  Hash  (cost=1.04..1.04 rows=1 width=4)
+                                                                                             ->  Broadcast Motion 3:3  (slice5; segments: 3)  (cost=0.00..1.04 rows=1 width=4)
+                                                                                                   ->  Seq Scan on region  (cost=0.00..1.02 rows=1 width=4)
+                                                                                                         Filter: (r_name = 'EUROPE'::bpchar)
+                                 ->  Hash  (cost=5507.00..5507.00 rows=300000 width=8)
+                                       ->  Broadcast Motion 3:3  (slice6; segments: 3)  (cost=0.00..5507.00 rows=300000 width=8)
+                                             ->  Seq Scan on supplier  (cost=0.00..1507.00 rows=100000 width=8)
+ Optimizer: Postgres-based planner
+(40 rows)
+

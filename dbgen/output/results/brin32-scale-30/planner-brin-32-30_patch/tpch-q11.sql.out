@@ -1,0 +1,68 @@
+                                                                                   QUERY PLAN                                                                                    
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=186421.79..190857.69 rows=313122 width=36) (actual time=3544.909..3566.795 rows=30005 loops=1)
+   Merge Key: (sum((partsupp.ps_supplycost * (partsupp.ps_availqty)::numeric)))
+   InitPlan 1 (returns $0)  (slice5)
+     ->  Finalize Aggregate  (cost=160937.08..160937.09 rows=1 width=32) (actual time=2962.398..2962.398 rows=1 loops=1)
+           ->  Gather Motion 3:1  (slice6; segments: 3)  (cost=160937.01..160937.06 rows=3 width=32) (actual time=2944.639..2962.378 rows=3 loops=1)
+                 ->  Partial Aggregate  (cost=160937.01..160937.02 rows=1 width=32) (actual time=2943.151..2943.154 rows=1 loops=1)
+                       ->  Hash Join  (cost=2163.34..158588.59 rows=313122 width=10) (actual time=31.387..2781.052 rows=317137 loops=1)
+                             Hash Cond: (partsupp_1.ps_suppkey = supplier_1.s_suppkey)
+                             Extra Text: (seg1)   Hash chain length 1.0 avg, 3 max, using 11342 of 131072 buckets.
+                             ->  Seq Scan on partsupp partsupp_1  (cost=0.00..123297.29 rows=7999129 width=14) (actual time=0.097..1553.843 rows=8004645 loops=1)
+                             ->  Hash  (cost=2013.34..2013.34 rows=12000 width=4) (actual time=30.390..30.391 rows=11857 loops=1)
+                                   Buckets: 131072  Batches: 1  Memory Usage: 1441kB
+                                   ->  Broadcast Motion 3:3  (slice7; segments: 3)  (cost=1.14..2013.34 rows=12000 width=4) (actual time=3.670..28.176 rows=11857 loops=1)
+                                         ->  Hash Join  (cost=1.14..1853.34 rows=4000 width=4) (actual time=0.613..28.695 rows=4019 loops=1)
+                                               Hash Cond: (supplier_1.s_nationkey = nation_1.n_nationkey)
+                                               Extra Text: (seg1)   Hash chain length 1.0 avg, 1 max, using 1 of 131072 buckets.
+                                               ->  Seq Scan on supplier supplier_1  (cost=0.00..1550.00 rows=100000 width=8) (actual time=0.026..11.597 rows=100172 loops=1)
+                                               ->  Hash  (cost=1.12..1.12 rows=1 width=4) (actual time=0.007..0.008 rows=1 loops=1)
+                                                     Buckets: 131072  Batches: 1  Memory Usage: 1025kB
+                                                     ->  Broadcast Motion 3:3  (slice8; segments: 3)  (cost=0.00..1.12 rows=1 width=4) (actual time=0.003..0.004 rows=1 loops=1)
+                                                           ->  Seq Scan on nation nation_1  (cost=0.00..1.10 rows=1 width=4) (actual time=0.020..0.038 rows=1 loops=1)
+                                                                 Filter: (n_name = 'JORDAN'::bpchar)
+                                                                 Rows Removed by Filter: 8
+   ->  Sort  (cost=186421.79..186682.72 rows=104374 width=36) (actual time=3542.538..3543.584 rows=10066 loops=1)
+         Sort Key: (sum((partsupp.ps_supplycost * (partsupp.ps_availqty)::numeric))) DESC
+         Sort Method:  quicksort  Memory: 2794kB
+         Executor Memory: 2101kB  Segments: 3  Max: 703kB (segment 0)
+         ->  HashAggregate  (cost=171859.60..177721.47 rows=104374 width=36) (actual time=3061.396..3537.149 rows=10066 loops=1)
+               Group Key: partsupp.ps_partkey
+               Filter: (sum((partsupp.ps_supplycost * (partsupp.ps_availqty)::numeric)) > $0)
+               Peak Memory Usage: 0 kB
+               Rows Removed by Filter: 288197
+               ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=2163.34..164851.04 rows=313122 width=14) (actual time=37.822..2743.852 rows=316478 loops=1)
+                     Hash Key: partsupp.ps_partkey
+                     ->  Hash Join  (cost=2163.34..158588.59 rows=313122 width=14) (actual time=30.679..2904.940 rows=317137 loops=1)
+                           Hash Cond: (partsupp.ps_suppkey = supplier.s_suppkey)
+                           Extra Text: (seg1)   Hash chain length 1.0 avg, 3 max, using 11342 of 131072 buckets.
+                           ->  Seq Scan on partsupp  (cost=0.00..123297.29 rows=7999129 width=18) (actual time=0.136..1609.707 rows=8004645 loops=1)
+                           ->  Hash  (cost=2013.34..2013.34 rows=12000 width=4) (actual time=30.270..30.270 rows=11857 loops=1)
+                                 Buckets: 131072  Batches: 1  Memory Usage: 1441kB
+                                 ->  Broadcast Motion 3:3  (slice3; segments: 3)  (cost=1.14..2013.34 rows=12000 width=4) (actual time=3.751..27.967 rows=11857 loops=1)
+                                       ->  Hash Join  (cost=1.14..1853.34 rows=4000 width=4) (actual time=0.790..28.435 rows=4019 loops=1)
+                                             Hash Cond: (supplier.s_nationkey = nation.n_nationkey)
+                                             Extra Text: (seg1)   Hash chain length 1.0 avg, 1 max, using 1 of 131072 buckets.
+                                             ->  Seq Scan on supplier  (cost=0.00..1550.00 rows=100000 width=8) (actual time=0.018..11.412 rows=100172 loops=1)
+                                             ->  Hash  (cost=1.12..1.12 rows=1 width=4) (actual time=0.010..0.010 rows=1 loops=1)
+                                                   Buckets: 131072  Batches: 1  Memory Usage: 1025kB
+                                                   ->  Broadcast Motion 3:3  (slice4; segments: 3)  (cost=0.00..1.12 rows=1 width=4) (actual time=0.004..0.004 rows=1 loops=1)
+                                                         ->  Seq Scan on nation  (cost=0.00..1.10 rows=1 width=4) (actual time=0.026..0.028 rows=1 loops=1)
+                                                               Filter: (n_name = 'JORDAN'::bpchar)
+                                                               Rows Removed by Filter: 8
+ Optimizer: Postgres query optimizer
+ Planning Time: 4.045 ms
+   (slice0)    Executor memory: 6360K bytes.
+   (slice1)    Executor memory: 21940K bytes avg x 3 workers, 21940K bytes max (seg1).  Work_mem: 32913K bytes max.
+   (slice2)    Executor memory: 1544K bytes avg x 3 workers, 1544K bytes max (seg0).  Work_mem: 1441K bytes max.
+   (slice3)    Executor memory: 1086K bytes avg x 3 workers, 1086K bytes max (seg0).  Work_mem: 1025K bytes max.
+   (slice4)    Executor memory: 38K bytes avg x 3 workers, 38K bytes max (seg0).
+   (slice5)    Executor memory: 6287K bytes.
+   (slice6)    Executor memory: 1549K bytes avg x 3 workers, 1549K bytes max (seg0).  Work_mem: 1441K bytes max.
+   (slice7)    Executor memory: 1086K bytes avg x 3 workers, 1086K bytes max (seg0).  Work_mem: 1025K bytes max.
+   (slice8)    Executor memory: 38K bytes avg x 3 workers, 38K bytes max (seg0).
+ Memory used:  128000kB
+ Execution Time: 6547.751 ms
+(64 rows)
+

@@ -1,0 +1,58 @@
+                                                                                                  QUERY PLAN                                                                                                   
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=162568.56..162568.87 rows=22 width=44) (actual time=18626.543..18649.200 rows=27840 loops=1)
+   Merge Key: (count(DISTINCT partsupp.ps_suppkey)), part.p_brand, part.p_type, part.p_size
+   ->  Sort  (cost=162568.56..162568.58 rows=7 width=44) (actual time=18625.140..18626.136 rows=9382 loops=1)
+         Sort Key: (count(DISTINCT partsupp.ps_suppkey)) DESC, part.p_brand, part.p_type, part.p_size
+         Sort Method:  quicksort  Memory: 3570kB
+         Executor Memory: 2935kB  Segments: 3  Max: 985kB (segment 0)
+         ->  GroupAggregate  (cost=162568.30..162568.46 rows=7 width=44) (actual time=17549.649..18607.350 rows=9382 loops=1)
+               Group Key: part.p_brand, part.p_type, part.p_size
+               ->  Sort  (cost=162568.30..162568.31 rows=7 width=40) (actual time=17549.521..18068.294 rows=1199737 loops=1)
+                     Sort Key: part.p_brand, part.p_type, part.p_size
+                     Sort Method:  external merge  Disk: 181408kB
+                     Executor Memory: 127259kB  Segments: 3  Max: 42420kB (segment 0)
+                     ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=143396.56..162568.19 rows=7 width=40) (actual time=7466.583..15017.379 rows=1199737 loops=1)
+                           Hash Key: part.p_brand, part.p_type, part.p_size
+                           ->  Hash Join  (cost=143396.56..162568.05 rows=7 width=40) (actual time=7465.831..10016.249 rows=1187209 loops=1)
+                                 Hash Cond: (part.p_partkey = partsupp.ps_partkey)
+                                 Extra Text: (seg2)   Initial batch 0:
+ (seg2)     Wrote 191332K bytes to inner workfile.
+ (seg2)     Wrote 39036K bytes to outer workfile.
+ (seg2)   Overflow batches 1..7:
+ (seg2)     Read 240856K bytes from inner workfile: 34408K avg x 7 nonempty batches, 55653K max.
+ (seg2)     Wrote 49525K bytes to inner workfile: 16509K avg x 3 overflowing batches, 28244K max.
+ (seg2)     Read 39036K bytes from outer workfile: 5577K avg x 7 nonempty batches, 5619K max.
+ (seg2)   Hash chain length 6.2 avg, 36 max, using 1290228 of 2097152 buckets.
+                                 ->  Bitmap Heap Scan on part  (cost=89.09..18122.22 rows=303542 width=40) (actual time=2.949..215.076 rows=296961 loops=1)
+                                       Recheck Cond: (p_size = ANY ('{3,45,14,32,41,8,21,15}'::integer[]))
+                                       Rows Removed by Index Recheck: 45629
+                                       Filter: ((p_brand <> 'Brand#55'::bpchar) AND ((p_type)::text !~~ 'LARGE ANODIZED%'::text))
+                                       Rows Removed by Filter: 22986
+                                       ->  Bitmap Index Scan on part_p_size_idx  (cost=0.00..13.20 rows=315125 width=0) (actual time=1.831..1.831 rows=19200 loops=1)
+                                             Index Cond: (p_size = ANY ('{3,45,14,32,41,8,21,15}'::integer[]))
+                                 ->  Hash  (cost=143307.37..143307.37 rows=8 width=8) (actual time=7461.175..7461.176 rows=8000358 loops=1)
+                                       Buckets: 262144 (originally 131072)  Batches: 8 (originally 1)  Memory Usage: 41232kB
+                                       ->  Redistribute Motion 3:3  (slice3; segments: 3)  (cost=9.88..143307.37 rows=8 width=8) (actual time=3.841..5733.367 rows=8000358 loops=1)
+                                             Hash Key: partsupp.ps_partkey
+                                             ->  Hash Left Anti Semi (Not-In) Join  (cost=9.88..143307.20 rows=8 width=8) (actual time=3.919..4232.874 rows=8000604 loops=1)
+                                                   Hash Cond: (partsupp.ps_suppkey = supplier.s_suppkey)
+                                                   Extra Text: (seg1)   Hash chain length 1.0 avg, 1 max, using 155 of 131072 buckets.
+                                                   ->  Seq Scan on partsupp  (cost=0.00..123297.29 rows=7999129 width=8) (actual time=0.068..1845.546 rows=8004645 loops=1)
+                                                   ->  Hash  (cost=9.51..9.51 rows=30 width=4) (actual time=3.463..3.463 rows=155 loops=1)
+                                                         Buckets: 131072  Batches: 1  Memory Usage: 1030kB
+                                                         ->  Broadcast Motion 3:3  (slice4; segments: 3)  (cost=0.14..9.51 rows=30 width=4) (actual time=1.983..3.424 rows=155 loops=1)
+                                                               ->  Index Only Scan using supplier_s_suppkey_idx_like on supplier  (cost=0.14..9.11 rows=10 width=4) (actual time=1.218..2.785 rows=60 loops=1)
+                                                                     Heap Fetches: 60
+ Optimizer: Postgres query optimizer
+ Planning Time: 3.713 ms
+   (slice0)    Executor memory: 126K bytes.
+ * (slice1)    Executor memory: 43398K bytes avg x 3 workers, 43404K bytes max (seg0).  Work_mem: 42420K bytes max, 152255K bytes wanted.
+ * (slice2)    Executor memory: 74108K bytes avg x 3 workers, 74343K bytes max (seg2).  Work_mem: 41232K bytes max, 314562K bytes wanted.
+   (slice3)    Executor memory: 1088K bytes avg x 3 workers, 1088K bytes max (seg0).  Work_mem: 1030K bytes max.
+   (slice4)    Executor memory: 113K bytes avg x 3 workers, 113K bytes max (seg0).
+ Memory used:  128000kB
+ Memory wanted:  1888271kB
+ Execution Time: 18667.351 ms
+(54 rows)
+

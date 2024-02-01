@@ -1,0 +1,27 @@
+                                                                        QUERY PLAN                                                                         
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=2741003.19..2741017.36 rows=1000 width=16)
+   Merge Key: (count(*)), (count(orders.o_orderkey))
+   ->  Sort  (cost=2741003.19..2741004.03 rows=333 width=16)
+         Sort Key: (count(*)) DESC, (count(orders.o_orderkey)) DESC
+         ->  Finalize HashAggregate  (cost=2740985.89..2740989.22 rows=333 width=16)
+               Group Key: (count(orders.o_orderkey))
+               ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=2740950.89..2740980.89 rows=1000 width=16)
+                     Hash Key: (count(orders.o_orderkey))
+                     ->  Partial HashAggregate  (cost=2740950.89..2740960.89 rows=1000 width=16)
+                           Group Key: count(orders.o_orderkey)
+                           ->  HashAggregate  (cost=2685510.25..2718450.89 rows=1500000 width=12)
+                                 Group Key: customer.c_custkey
+                                 Planned Partitions: 8
+                                 ->  Hash Right Join  (cost=49261.06..2540262.86 rows=14696970 width=12)
+                                       Hash Cond: (orders.o_custkey = customer.c_custkey)
+                                       ->  Redistribute Motion 3:3  (slice3; segments: 3)  (cost=0.00..2302033.62 rows=14696970 width=12)
+                                             Hash Key: orders.o_custkey
+                                             ->  Seq Scan on orders  (cost=0.00..2008094.23 rows=14696970 width=12)
+                                                   Filter: ((o_comment)::text !~~ '%express%accounts%'::text)
+                                       ->  Hash  (cost=30511.06..30511.06 rows=1500000 width=4)
+                                             ->  Bitmap Heap Scan on customer  (cost=11578.06..30511.06 rows=1500000 width=4)
+                                                   ->  Bitmap Index Scan on customer_c_nationkey_c_custkey_idx  (cost=0.00..11203.06 rows=1500000 width=0)
+ Optimizer: Postgres-based planner
+(23 rows)
+

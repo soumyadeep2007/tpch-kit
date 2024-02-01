@@ -1,0 +1,110 @@
+                                                                                                                                QUERY PLAN                                                                                                                                 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=3915598.15..3915598.48 rows=23 width=34) (actual time=148502.759..148502.847 rows=100 loops=1)
+   ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=3915598.15..3915598.48 rows=23 width=34) (actual time=148502.756..148502.836 rows=100 loops=1)
+         Merge Key: (count(*)), supplier.s_name
+         ->  Limit  (cost=3915598.15..3915598.17 rows=8 width=34) (actual time=148500.958..148500.992 rows=100 loops=1)
+               ->  Sort  (cost=3915598.15..3915598.17 rows=9 width=34) (actual time=148500.957..148500.964 rows=100 loops=1)
+                     Sort Key: (count(*)) DESC, supplier.s_name
+                     Sort Method:  top-N heapsort  Memory: 115kB
+                     Executor Memory: 178kB  Segments: 3  Max: 60kB (segment 0)
+                     ->  GroupAggregate  (cost=3915597.87..3915598.02 rows=9 width=34) (actual time=148484.705..148497.809 rows=4081 loops=1)
+                           Group Key: supplier.s_name
+                           ->  Sort  (cost=3915597.87..3915597.89 rows=9 width=26) (actual time=148484.688..148488.760 rows=40599 loops=1)
+                                 Sort Key: supplier.s_name
+                                 Sort Method:  quicksort  Memory: 14813kB
+                                 Executor Memory: 12039kB  Segments: 3  Max: 4077kB (segment 0)
+                                 ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=3634469.77..3915597.73 rows=9 width=26) (actual time=142890.245..148369.933 rows=40599 loops=1)
+                                       Hash Key: supplier.s_name
+                                       ->  Hash Join  (cost=3634469.77..3915597.56 rows=9 width=26) (actual time=142837.609..148301.949 rows=39640 loops=1)
+                                             Hash Cond: (orders.o_orderkey = l1.l_orderkey)
+                                             Extra Text: (seg2)   Hash chain length 1.3 avg, 6 max, using 59923 of 131072 buckets.
+                                             ->  Seq Scan on orders  (cost=0.00..253998.42 rows=7234476 width=8) (actual time=0.161..4052.579 rows=7309660 loops=1)
+                                                   Filter: (o_orderstatus = 'F'::bpchar)
+                                                   Rows Removed by Filter: 7693631
+                                             ->  Hash  (cost=3634469.67..3634469.67 rows=9 width=42) (actual time=142836.448..142836.448 rows=80646 loops=1)
+                                                   Buckets: 131072  Batches: 1  Memory Usage: 7325kB
+                                                   ->  Redistribute Motion 3:3  (slice3; segments: 3)  (cost=3634469.41..3634469.67 rows=9 width=42) (actual time=142743.636..142813.910 rows=80646 loops=1)
+                                                         Hash Key: l1.l_orderkey
+                                                         ->  HashAggregate  (cost=3634469.41..3634469.49 rows=9 width=42) (actual time=142744.495..142787.139 rows=80794 loops=1)
+                                                               Group Key: (RowIdExpr)
+                                                               Peak Memory Usage: 0 kB
+                                                               ->  Redistribute Motion 3:3  (slice4; segments: 3)  (cost=2523305.34..3634469.39 rows=9 width=42) (actual time=86798.280..142628.460 rows=152426 loops=1)
+                                                                     Hash Key: (RowIdExpr)
+                                                                     ->  Hash Join  (cost=2523305.34..3634469.21 rows=9 width=42) (actual time=86746.772..142627.612 rows=152192 loops=1)
+                                                                           Hash Cond: (l2.l_orderkey = l1.l_orderkey)
+                                                                           Join Filter: (l2.l_suppkey <> l1.l_suppkey)
+                                                                           Rows Removed by Join Filter: 134514
+                                                                           Extra Text: (seg0)   Initial batch 0:
+ (seg0)     Wrote 13441K bytes to inner workfile.
+ (seg0)     Wrote 4228704K bytes to outer workfile.
+ (seg0)   Overflow batch 1:
+ (seg0)     Read 13441K bytes from inner workfile.
+ (seg0)     Read 4228730K bytes from outer workfile.
+ (seg0)   Hash chain length 2.0 avg, 11 max, using 206055 of 262144 buckets.
+                                                                           ->  Seq Scan on lineitem l2  (cost=0.00..886171.72 rows=59997872 width=12) (actual time=0.145..11475.971 rows=60003310 loops=1)
+                                                                           ->  Hash  (cost=2523305.02..2523305.02 rows=26 width=38) (actual time=86746.005..86746.006 rows=403859 loops=1)
+                                                                                 Buckets: 131072 (originally 65536)  Batches: 2 (originally 1)  Memory Usage: 30852kB
+                                                                                 ->  Broadcast Motion 3:3  (slice5; segments: 3)  (cost=1864984.90..2523305.02 rows=26 width=38) (actual time=48835.589..86560.079 rows=403859 loops=1)
+                                                                                       ->  Hash Anti Join  (cost=1864984.90..2523304.67 rows=9 width=38) (actual time=45161.251..86543.907 rows=134925 loops=1)
+                                                                                             Hash Cond: (l1.l_orderkey = l3.l_orderkey)
+                                                                                             Join Filter: (l3.l_suppkey <> l1.l_suppkey)
+                                                                                             Rows Removed by Join Filter: 549493
+                                                                                             Extra Text: (seg0)   Initial batch 0:
+ (seg0)     Wrote 1176611K bytes to inner workfile.
+ (seg0)     Wrote 88093K bytes to outer workfile.
+ (seg0)   Initial batches 1..63:
+ (seg0)     Read 1146979K bytes from inner workfile: 18207K avg x 63 nonempty batches, 18285K max.
+ (seg0)     Wrote 563289K bytes to inner workfile: 8942K avg x 63 overflowing batches, 9008K max.
+ (seg0)     Read 43722K bytes from outer workfile: 694K avg x 63 nonempty batches, 714K max.
+ (seg0)   Overflow batches 64..127:
+ (seg0)     Read 592920K bytes from inner workfile: 9265K avg x 64 nonempty batches, 9332K max.
+ (seg0)     Read 44372K bytes from outer workfile: 694K avg x 64 nonempty batches, 705K max.
+ (seg0)   Hash chain length 4.0 avg, 37 max, using 9387089 of 16777216 buckets.
+                                                                                             ->  Redistribute Motion 3:3  (slice6; segments: 3)  (cost=328286.58..952723.36 rows=788025 width=38) (actual time=0.027..28965.351 rows=1515214 loops=1)
+                                                                                                   Hash Key: l1.l_orderkey
+                                                                                                   ->  Hash Join  (cost=328286.58..936962.86 rows=788025 width=38) (actual time=3862.701..32496.625 rows=1513121 loops=1)
+                                                                                                         Hash Cond: (l1.l_suppkey = supplier.s_suppkey)
+                                                                                                         Extra Text: (seg0)   Hash chain length 1.1 avg, 4 max, using 10969 of 65536 buckets.
+                                                                                                         ->  Bitmap Heap Scan on lineitem l1  (cost=326123.24..862307.37 rows=19999291 width=12) (actual time=3808.483..26409.050 rows=37938467 loops=1)
+                                                                                                               Recheck Cond: (l_commitdate < l_receiptdate)
+                                                                                                               Rows Removed by Index Recheck: 7181118
+                                                                                                               ->  Bitmap Index Scan on lineitem_l_orderkey_idx_part1  (cost=0.00..321123.42 rows=19999291 width=0) (actual time=3807.520..3807.520 rows=37938467 loops=1)
+                                                                                                         ->  Hash  (cost=2013.34..2013.34 rows=12000 width=30) (actual time=53.625..53.626 rows=11969 loops=1)
+                                                                                                               Buckets: 65536  Batches: 1  Memory Usage: 1261kB
+                                                                                                               ->  Broadcast Motion 3:3  (slice7; segments: 3)  (cost=1.14..2013.34 rows=12000 width=30) (actual time=2.292..48.242 rows=11969 loops=1)
+                                                                                                                     ->  Hash Join  (cost=1.14..1853.34 rows=4000 width=30) (actual time=1.175..50.564 rows=4080 loops=1)
+                                                                                                                           Hash Cond: (supplier.s_nationkey = nation.n_nationkey)
+                                                                                                                           Extra Text: (seg0)   Hash chain length 1.0 avg, 1 max, using 1 of 65536 buckets.
+                                                                                                                           ->  Seq Scan on supplier  (cost=0.00..1550.00 rows=100000 width=34) (actual time=0.076..31.711 rows=100172 loops=1)
+                                                                                                                           ->  Hash  (cost=1.12..1.12 rows=1 width=4) (actual time=0.322..0.324 rows=1 loops=1)
+                                                                                                                                 Buckets: 65536  Batches: 1  Memory Usage: 513kB
+                                                                                                                                 ->  Broadcast Motion 3:3  (slice8; segments: 3)  (cost=0.00..1.12 rows=1 width=4) (actual time=0.005..0.317 rows=1 loops=1)
+                                                                                                                                       ->  Seq Scan on nation  (cost=0.00..1.10 rows=1 width=4) (actual time=0.072..0.075 rows=1 loops=1)
+                                                                                                                                             Filter: (n_name = 'FRANCE'::bpchar)
+                                                                                                                                             Rows Removed by Filter: 8
+                                                                                             ->  Hash  (cost=1262293.19..1262293.19 rows=19999291 width=12) (actual time=45060.474..45060.474 rows=37946078 loops=1)
+                                                                                                   Buckets: 131072 (originally 131072)  Batches: 128 (originally 64)  Memory Usage: 24477kB
+                                                                                                   ->  Redistribute Motion 3:3  (slice9; segments: 3)  (cost=326123.24..1262293.19 rows=19999291 width=12) (actual time=3814.783..37286.478 rows=37946078 loops=1)
+                                                                                                         Hash Key: l3.l_orderkey
+                                                                                                         ->  Bitmap Heap Scan on lineitem l3  (cost=326123.24..862307.37 rows=19999291 width=12) (actual time=3863.017..31005.880 rows=37938467 loops=1)
+                                                                                                               Recheck Cond: (l_commitdate < l_receiptdate)
+                                                                                                               Rows Removed by Index Recheck: 7181118
+                                                                                                               ->  Bitmap Index Scan on lineitem_l_orderkey_idx_part1  (cost=0.00..321123.42 rows=19999291 width=0) (actual time=3862.045..3862.045 rows=37938467 loops=1)
+ Optimizer: Postgres query optimizer
+ Planning Time: 12.101 ms
+   (slice0)    Executor memory: 270K bytes.
+   (slice1)    Executor memory: 4073K bytes avg x 3 workers, 4136K bytes max (seg0).  Work_mem: 4077K bytes max.
+   (slice2)    Executor memory: 7371K bytes avg x 3 workers, 7403K bytes max (seg1).  Work_mem: 7325K bytes max.
+   (slice3)    Executor memory: 13156K bytes avg x 3 workers, 13203K bytes max (seg2).  Work_mem: 15401K bytes max.
+ * (slice4)    Executor memory: 32029K bytes avg x 3 workers, 32029K bytes max (seg0).  Work_mem: 30852K bytes max, 32576K bytes wanted.
+ * (slice5)    Executor memory: 29939K bytes avg x 3 workers, 29940K bytes max (seg1).  Work_mem: 24477K bytes max, 1631520K bytes wanted.
+   (slice6)    Executor memory: 3576220K bytes avg x 3 workers, 3576310K bytes max (seg1).  Work_mem: 1261K bytes max.
+   (slice7)    Executor memory: 574K bytes avg x 3 workers, 574K bytes max (seg0).  Work_mem: 513K bytes max.
+   (slice8)    Executor memory: 38K bytes avg x 3 workers, 38K bytes max (seg0).
+   (slice9)    Executor memory: 3574924K bytes avg x 3 workers, 3575014K bytes max (seg1).
+ Memory used:  128000kB
+ Memory wanted:  16317495kB
+ Execution Time: 148530.072 ms
+(106 rows)
+

@@ -1,0 +1,96 @@
+                                                                                                                QUERY PLAN                                                                                                                
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize GroupAggregate  (cost=1449339.12..1450148.31 rows=2405 width=40) (actual time=31175.727..31175.742 rows=2 loops=1)
+   Group Key: (date_part('year'::text, (orders.o_orderdate)::timestamp without time zone))
+   ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=1449339.12..1450004.01 rows=7215 width=72) (actual time=31175.702..31175.709 rows=6 loops=1)
+         Merge Key: (date_part('year'::text, (orders.o_orderdate)::timestamp without time zone))
+         ->  Partial GroupAggregate  (cost=1449339.12..1449907.82 rows=2405 width=72) (actual time=31162.177..31173.994 rows=2 loops=1)
+               Group Key: (date_part('year'::text, (orders.o_orderdate)::timestamp without time zone))
+               ->  Sort  (cost=1449339.12..1449396.97 rows=23137 width=46) (actual time=31151.413..31154.089 rows=24170 loops=1)
+                     Sort Key: (date_part('year'::text, (orders.o_orderdate)::timestamp without time zone))
+                     Sort Method:  quicksort  Memory: 8489kB
+                     Executor Memory: 6805kB  Segments: 3  Max: 2280kB (segment 1)
+                     ->  Hash Join  (cost=1130633.62..1447661.90 rows=23137 width=46) (actual time=25851.904..31142.549 rows=24170 loops=1)
+                           Hash Cond: (supplier.s_nationkey = n2.n_nationkey)
+                           Extra Text: (seg1)   Hash chain length 1.0 avg, 1 max, using 25 of 65536 buckets.
+                           ->  Hash Join  (cost=1130631.89..1447251.33 rows=23137 width=20) (actual time=25849.935..31125.533 rows=24170 loops=1)
+                                 Hash Cond: (lineitem.l_suppkey = supplier.s_suppkey)
+                                 Extra Text: (seg1)   Hash chain length 1.9 avg, 9 max, using 51312 of 65536 buckets.
+                                 ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=1127831.89..1444156.50 rows=24175 width=20) (actual time=25748.793..31003.475 rows=24170 loops=1)
+                                       Hash Key: lineitem.l_suppkey
+                                       ->  Hash Join  (cost=1127831.89..1443673.01 rows=24175 width=20) (actual time=25672.528..31131.209 rows=24081 loops=1)
+                                             Hash Cond: (orders.o_custkey = customer.c_custkey)
+                                             Extra Text: (seg0)   Hash chain length 2.5 avg, 12 max, using 117665 of 131072 buckets.
+                                             ->  Redistribute Motion 3:3  (slice3; segments: 3)  (cost=1091566.59..1406712.69 rows=120873 width=24) (actual time=24837.224..30204.988 rows=120045 loops=1)
+                                                   Hash Key: orders.o_custkey
+                                                   ->  Hash Join  (cost=1091566.59..1404295.23 rows=120873 width=24) (actual time=25646.692..30989.421 rows=120669 loops=1)
+                                                         Hash Cond: (orders.o_orderkey = lineitem.l_orderkey)
+                                                         Extra Text: (seg0)   Initial batch 0:
+ (seg0)     Wrote 9673K bytes to inner workfile.
+ (seg0)     Wrote 297151K bytes to outer workfile.
+ (seg0)   Initial batch 1:
+ (seg0)     Read 9673K bytes from inner workfile.
+ (seg0)     Read 297151K bytes from outer workfile.
+ (seg0)   Work file set: 1 files (0 compressed), max file size 9895936, min file size 32768, compression buffer size 0 bytes
+ (seg0)   Hash chain length 1.9 avg, 10 max, using 203098 of 262144 buckets.
+                                                         ->  Seq Scan on orders  (cost=0.00..291511.00 rows=4545366 width=16) (actual time=1602.626..3860.562 rows=4558976 loops=1)
+                                                               Filter: ((o_orderdate >= '1995-01-01'::date) AND (o_orderdate <= '1996-12-31'::date))
+                                                               Rows Removed by Filter: 10438712
+                                                         ->  Hash  (cost=1086580.48..1086580.48 rows=398888 width=24) (actual time=24041.328..24041.329 rows=395348 loops=1)
+                                                               Buckets: 131072  Batches: 2  Memory Usage: 12974kB
+                                                               ->  Redistribute Motion 3:3  (slice4; segments: 3)  (cost=30928.70..1086580.48 rows=398888 width=24) (actual time=782.327..23924.819 rows=395348 loops=1)
+                                                                     Hash Key: lineitem.l_orderkey
+                                                                     ->  Hash Join  (cost=30928.70..1078602.72 rows=398888 width=24) (actual time=745.153..23642.527 rows=395144 loops=1)
+                                                                           Hash Cond: (lineitem.l_partkey = part.p_partkey)
+                                                                           Extra Text: (seg0)   Hash chain length 1.3 avg, 6 max, using 29680 of 65536 buckets.
+                                                                           ->  Seq Scan on lineitem  (cost=0.00..886186.56 rows=59999456 width=28) (actual time=0.156..11442.505 rows=60003310 loops=1)
+                                                                           ->  Hash  (cost=30430.09..30430.09 rows=39889 width=4) (actual time=744.382..744.382 rows=39493 loops=1)
+                                                                                 Buckets: 65536  Batches: 1  Memory Usage: 1901kB
+                                                                                 ->  Broadcast Motion 3:3  (slice5; segments: 3)  (cost=510.67..30430.09 rows=39889 width=4) (actual time=179.641..731.595 rows=39493 loops=1)
+                                                                                       ->  Bitmap Heap Scan on part  (cost=510.67..29898.23 rows=13296 width=4) (actual time=158.341..724.344 rows=13286 loops=1)
+                                                                                             Recheck Cond: ((p_type)::text = 'LARGE PLATED COPPER'::text)
+                                                                                             Rows Removed by Index Recheck: 799371
+                                                                                             ->  Bitmap Index Scan on part_p_type_p_partkey_idx  (cost=0.00..507.34 rows=13296 width=0) (actual time=157.147..157.147 rows=13286 loops=1)
+                                                                                                   Index Cond: ((p_type)::text = 'LARGE PLATED COPPER'::text)
+                                             ->  Hash  (cost=32515.30..32515.30 rows=300000 width=4) (actual time=834.328..834.332 rows=300010 loops=1)
+                                                   Buckets: 131072  Batches: 1  Memory Usage: 11572kB
+                                                   ->  Hash Join  (cost=2.30..32515.30 rows=300000 width=4) (actual time=0.990..720.312 rows=300010 loops=1)
+                                                         Hash Cond: (customer.c_nationkey = n1.n_nationkey)
+                                                         Extra Text: (seg0)   Hash chain length 1.0 avg, 1 max, using 5 of 65536 buckets.
+                                                         ->  Seq Scan on customer  (cost=0.00..23888.00 rows=1500000 width=8) (actual time=0.110..393.848 rows=1501094 loops=1)
+                                                         ->  Hash  (cost=2.24..2.24 rows=5 width=4) (actual time=0.715..0.716 rows=5 loops=1)
+                                                               Buckets: 65536  Batches: 1  Memory Usage: 513kB
+                                                               ->  Broadcast Motion 3:3  (slice6; segments: 3)  (cost=1.05..2.24 rows=5 width=4) (actual time=0.006..0.705 rows=5 loops=1)
+                                                                     ->  Hash Join  (cost=1.05..2.18 rows=2 width=4) (actual time=0.818..0.997 rows=2 loops=1)
+                                                                           Hash Cond: (n1.n_regionkey = region.r_regionkey)
+                                                                           Extra Text: (seg1)   Hash chain length 1.0 avg, 1 max, using 1 of 65536 buckets.
+                                                                           ->  Seq Scan on nation n1  (cost=0.00..1.08 rows=8 width=8) (actual time=0.067..0.069 rows=10 loops=1)
+                                                                           ->  Hash  (cost=1.04..1.04 rows=1 width=4) (actual time=0.008..0.009 rows=1 loops=1)
+                                                                                 Buckets: 65536  Batches: 1  Memory Usage: 513kB
+                                                                                 ->  Broadcast Motion 3:3  (slice7; segments: 3)  (cost=0.00..1.04 rows=1 width=4) (actual time=0.003..0.004 rows=1 loops=1)
+                                                                                       ->  Seq Scan on region  (cost=0.00..1.02 rows=1 width=4) (actual time=0.098..0.100 rows=1 loops=1)
+                                                                                             Filter: (r_name = 'AFRICA'::bpchar)
+                                                                                             Rows Removed by Filter: 1
+                                 ->  Hash  (cost=1550.00..1550.00 rows=100000 width=8) (actual time=66.368..66.369 rows=100172 loops=1)
+                                       Buckets: 65536  Batches: 1  Memory Usage: 4425kB
+                                       ->  Seq Scan on supplier  (cost=0.00..1550.00 rows=100000 width=8) (actual time=0.059..29.073 rows=100172 loops=1)
+                           ->  Hash  (cost=1.42..1.42 rows=25 width=30) (actual time=1.392..1.393 rows=25 loops=1)
+                                 Buckets: 65536  Batches: 1  Memory Usage: 514kB
+                                 ->  Broadcast Motion 3:3  (slice8; segments: 3)  (cost=0.00..1.42 rows=25 width=30) (actual time=0.011..1.354 rows=25 loops=1)
+                                       ->  Seq Scan on nation n2  (cost=0.00..1.08 rows=8 width=30) (actual time=0.020..0.022 rows=10 loops=1)
+ Optimizer: Postgres-based planner
+ Planning Time: 11.532 ms
+   (slice0)    Executor memory: 235K bytes.
+   (slice1)    Executor memory: 5053K bytes avg x 3 workers, 5064K bytes max (seg1).  Work_mem: 4425K bytes max.
+   (slice2)    Executor memory: 13350K bytes avg x 3 workers, 13360K bytes max (seg0).  Work_mem: 11572K bytes max.
+ * (slice3)    Executor memory: 13141K bytes avg x 3 workers, 13173K bytes max (seg0).  Work_mem: 12974K bytes max, 24967K bytes wanted.
+   (slice4)    Executor memory: 2122K bytes avg x 3 workers, 2122K bytes max (seg0).  Work_mem: 1901K bytes max.
+   (slice5)    Executor memory: 197145K bytes avg x 3 workers, 197145K bytes max (seg1).
+   (slice6)    Executor memory: 574K bytes avg x 3 workers, 574K bytes max (seg0).  Work_mem: 513K bytes max.
+   (slice7)    Executor memory: 38K bytes avg x 3 workers, 38K bytes max (seg0).
+   (slice8)    Executor memory: 38K bytes avg x 3 workers, 38K bytes max (seg0).
+ Memory used:  128000kB
+ Memory wanted:  227201kB
+ Execution Time: 31200.319 ms
+(92 rows)
+

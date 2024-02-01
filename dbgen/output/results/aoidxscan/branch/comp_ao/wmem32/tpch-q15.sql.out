@@ -1,0 +1,41 @@
+CREATE VIEW
+                                                                                   QUERY PLAN                                                                                   
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=1445619.32..1445623.62 rows=303 width=104)
+   Merge Key: supplier.s_suppkey
+   InitPlan 1 (returns $0)  (slice3)
+     ->  Finalize Aggregate  (cost=1425274.63..1425274.64 rows=1 width=32)
+           ->  Gather Motion 3:1  (slice4; segments: 3)  (cost=1425274.57..1425274.62 rows=3 width=32)
+                 ->  Partial Aggregate  (cost=1425274.57..1425274.58 rows=1 width=32)
+                       ->  Finalize HashAggregate  (cost=1422746.64..1424010.60 rows=101117 width=36)
+                             Group Key: lineitem_1.l_suppkey
+                             ->  Redistribute Motion 3:3  (slice5; segments: 3)  (cost=1407780.10..1420471.70 rows=303324 width=36)
+                                   Hash Key: lineitem_1.l_suppkey
+                                   ->  Partial HashAggregate  (cost=1407780.10..1414405.21 rows=303324 width=36)
+                                         Group Key: lineitem_1.l_suppkey
+                                         ->  Bitmap Heap Scan on lineitem lineitem_1  (cost=387879.42..1373233.43 rows=2321246 width=16)
+                                               Recheck Cond: ((l_shipdate >= '1997-05-01'::date) AND (l_shipdate < '1997-08-01 00:00:00'::timestamp without time zone))
+                                               ->  Bitmap Index Scan on lineitem_l_shipdate_idx  (cost=0.00..387299.10 rows=2321246 width=0)
+                                                     Index Cond: ((l_shipdate >= '1997-05-01'::date) AND (l_shipdate < '1997-08-01 00:00:00'::timestamp without time zone))
+   ->  Sort  (cost=1445619.32..1445619.57 rows=101 width=104)
+         Sort Key: supplier.s_suppkey
+         ->  Hash Join  (cost=1428997.24..1445615.95 rows=101 width=104)
+               Hash Cond: (supplier.s_suppkey = revenue0.supplier_no)
+               ->  Seq Scan on supplier  (cost=0.00..16355.20 rows=100000 width=72)
+               ->  Hash  (cost=1428995.98..1428995.98 rows=101 width=36)
+                     ->  Subquery Scan on revenue0  (cost=1426632.98..1428995.98 rows=101 width=36)
+                           ->  Finalize HashAggregate  (cost=1426632.98..1428994.96 rows=101 width=36)
+                                 Group Key: lineitem.l_suppkey
+                                 Filter: (sum((lineitem.l_extendedprice * ('1'::numeric - lineitem.l_discount))) = $0)
+                                 ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=1407780.10..1420471.70 rows=303324 width=36)
+                                       Hash Key: lineitem.l_suppkey
+                                       ->  Partial HashAggregate  (cost=1407780.10..1414405.21 rows=303324 width=36)
+                                             Group Key: lineitem.l_suppkey
+                                             ->  Bitmap Heap Scan on lineitem  (cost=387879.42..1373233.43 rows=2321246 width=16)
+                                                   Recheck Cond: ((l_shipdate >= '1997-05-01'::date) AND (l_shipdate < '1997-08-01 00:00:00'::timestamp without time zone))
+                                                   ->  Bitmap Index Scan on lineitem_l_shipdate_idx  (cost=0.00..387299.10 rows=2321246 width=0)
+                                                         Index Cond: ((l_shipdate >= '1997-05-01'::date) AND (l_shipdate < '1997-08-01 00:00:00'::timestamp without time zone))
+ Optimizer: Postgres-based planner
+(35 rows)
+
+DROP VIEW

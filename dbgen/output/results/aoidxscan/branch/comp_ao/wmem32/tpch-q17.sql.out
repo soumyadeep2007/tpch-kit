@@ -1,0 +1,28 @@
+                                                                          QUERY PLAN                                                                          
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=18064040.16..18064040.17 rows=1 width=32)
+   ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=18064040.09..18064040.14 rows=3 width=32)
+         ->  Partial Aggregate  (cost=18064040.09..18064040.10 rows=1 width=32)
+               ->  Hash Join  (cost=9455246.22..18063798.54 rows=96616 width=8)
+                     Hash Cond: (lineitem.l_partkey = part.p_partkey)
+                     Join Filter: (lineitem.l_quantity < ((0.2 * avg(lineitem_1.l_quantity))))
+                     ->  Seq Scan on lineitem  (cost=0.00..8447869.66 rows=59999456 width=17)
+                     ->  Hash  (cost=9454883.91..9454883.91 rows=28985 width=40)
+                           ->  Broadcast Motion 3:3  (slice2; segments: 3)  (cost=9390160.61..9454883.91 rows=28985 width=40)
+                                 ->  Hash Join  (cost=9390160.61..9454497.44 rows=9662 width=40)
+                                       Hash Cond: (lineitem_1.l_partkey = part.p_partkey)
+                                       ->  Finalize HashAggregate  (cost=9389260.56..9429279.52 rows=1918514 width=36)
+                                             Group Key: lineitem_1.l_partkey
+                                             Planned Partitions: 8
+                                             ->  Redistribute Motion 3:3  (slice3; segments: 3)  (cost=9040833.04..9301129.09 rows=5755524 width=36)
+                                                   Hash Key: lineitem_1.l_partkey
+                                                   ->  Partial HashAggregate  (cost=9040833.04..9186018.61 rows=5755524 width=36)
+                                                         Group Key: lineitem_1.l_partkey
+                                                         Planned Partitions: 32
+                                                         ->  Seq Scan on lineitem lineitem_1  (cost=0.00..8447869.66 rows=59999456 width=9)
+                                       ->  Hash  (cost=774.16..774.16 rows=10072 width=4)
+                                             ->  Index Only Scan using part_p_container_p_brand_p_partkey_idx on part  (cost=0.18..774.16 rows=10072 width=4)
+                                                   Index Cond: ((p_container = 'SM BOX'::bpchar) AND (p_brand = 'Brand#53'::bpchar))
+ Optimizer: Postgres-based planner
+(24 rows)
+

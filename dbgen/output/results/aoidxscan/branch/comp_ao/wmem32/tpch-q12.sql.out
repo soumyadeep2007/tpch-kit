@@ -1,0 +1,25 @@
+                                                                                                         QUERY PLAN                                                                                                         
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=4567961.14..4567961.24 rows=7 width=27)
+   Merge Key: lineitem.l_shipmode
+   ->  Sort  (cost=4567961.14..4567961.14 rows=2 width=27)
+         Sort Key: lineitem.l_shipmode
+         ->  Finalize HashAggregate  (cost=4567961.10..4567961.12 rows=2 width=27)
+               Group Key: lineitem.l_shipmode
+               ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=4567960.84..4567961.05 rows=7 width=27)
+                     Hash Key: lineitem.l_shipmode
+                     ->  Partial HashAggregate  (cost=4567960.84..4567960.91 rows=7 width=27)
+                           Group Key: lineitem.l_shipmode
+                           ->  Hash Join  (cost=2431561.60..4547576.44 rows=1164823 width=27)
+                                 Hash Cond: (orders.o_orderkey = lineitem.l_orderkey)
+                                 ->  Seq Scan on orders  (cost=0.00..1970594.23 rows=15000000 width=24)
+                                 ->  Hash  (cost=2395413.34..2395413.34 rows=2588501 width=19)
+                                       ->  Redistribute Motion 3:3  (slice3; segments: 3)  (cost=914958.11..2395413.34 rows=2588501 width=19)
+                                             Hash Key: lineitem.l_orderkey
+                                             ->  Bitmap Heap Scan on lineitem  (cost=914958.11..2343643.32 rows=2588501 width=19)
+                                                   Recheck Cond: ((l_commitdate < l_receiptdate) AND (l_shipdate < l_commitdate))
+                                                   Filter: ((l_shipmode = ANY ('{AIR,SHIP}'::bpchar[])) AND (l_receiptdate >= '1996-01-01'::date) AND (l_receiptdate < '1997-01-01 00:00:00'::timestamp without time zone))
+                                                   ->  Bitmap Index Scan on lineitem_l_orderkey_idx_part2  (cost=0.00..914310.99 rows=6666606 width=0)
+ Optimizer: Postgres-based planner
+(21 rows)
+

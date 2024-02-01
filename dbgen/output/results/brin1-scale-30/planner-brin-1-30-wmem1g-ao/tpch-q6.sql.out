@@ -1,0 +1,20 @@
+                                                                         QUERY PLAN                                                                         
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=1392138.22..1392138.23 rows=1 width=32) (actual time=9136.903..9136.905 rows=1 loops=1)
+   ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=1392138.15..1392138.20 rows=3 width=32) (actual time=9041.943..9136.878 rows=3 loops=1)
+         ->  Partial Aggregate  (cost=1392138.15..1392138.16 rows=1 width=32) (actual time=9040.274..9040.275 rows=1 loops=1)
+               ->  Bitmap Heap Scan on lineitem  (cost=947.71..1373508.26 rows=3725977 width=12) (actual time=28.959..8456.709 rows=1192679 loops=1)
+                     Recheck Cond: ((l_shipdate >= '1995-01-01'::date) AND (l_shipdate < '1996-01-01 00:00:00'::timestamp without time zone))
+                     Rows Removed by Index Recheck: 97377
+                     Filter: ((l_discount >= 0.03) AND (l_discount <= 0.05) AND (l_quantity < '25'::numeric))
+                     Rows Removed by Filter: 7917752
+                     ->  Bitmap Index Scan on lineitem_l_shipdate_idx  (cost=0.00..16.21 rows=9341773 width=0) (actual time=2.137..2.137 rows=2820 loops=1)
+                           Index Cond: ((l_shipdate >= '1995-01-01'::date) AND (l_shipdate < '1996-01-01 00:00:00'::timestamp without time zone))
+ Optimizer: Postgres-based planner
+ Planning Time: 2.930 ms
+   (slice0)    Executor memory: 47K bytes.
+   (slice1)    Executor memory: 4666K bytes avg x 3 workers, 4671K bytes max (seg2).
+ Memory used:  128000kB
+ Execution Time: 9140.301 ms
+(16 rows)
+

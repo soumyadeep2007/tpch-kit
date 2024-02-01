@@ -1,0 +1,47 @@
+                                                                                                                                          QUERY PLAN                                                                                                                                           
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=2138366.98..2138367.08 rows=7 width=27) (actual time=51743.987..51743.991 rows=2 loops=1)
+   Merge Key: lineitem.l_shipmode
+   ->  Sort  (cost=2138366.98..2138366.99 rows=2 width=27) (actual time=51741.532..51741.557 rows=2 loops=1)
+         Sort Key: lineitem.l_shipmode
+         Sort Method:  quicksort  Memory: 75kB
+         Executor Memory: 177kB  Segments: 3  Max: 59kB (segment 0)
+         ->  Finalize HashAggregate  (cost=2138366.94..2138366.97 rows=2 width=27) (actual time=51741.270..51741.274 rows=2 loops=1)
+               Group Key: lineitem.l_shipmode
+               Extra Text: (seg2)   hash table(s): 1; chain length 1.0 avg, 1 max; using 2 of 4 buckets; total 1 expansions.
+ 
+               ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=2138366.68..2138366.89 rows=7 width=27) (actual time=51673.580..51741.243 rows=6 loops=1)
+                     Hash Key: lineitem.l_shipmode
+                     ->  Partial HashAggregate  (cost=2138366.68..2138366.75 rows=7 width=27) (actual time=51737.612..51737.621 rows=2 loops=1)
+                           Group Key: lineitem.l_shipmode
+                           Extra Text: (seg0)   hash table(s): 1; chain length 1.0 avg, 1 max; using 2 of 8 buckets; total 0 expansions.
+ 
+                           ->  Hash Join  (cost=1721580.92..2093456.21 rows=2566313 width=27) (actual time=43774.205..51545.818 rows=312743 loops=1)
+                                 Hash Cond: (orders.o_orderkey = lineitem.l_orderkey)
+                                 Extra Text: (seg0)   Initial batch 0:
+ (seg0)     Wrote 10093K bytes to inner workfile.
+ (seg0)     Wrote 483445K bytes to outer workfile.
+ (seg0)   Initial batches 1..3:
+ (seg0)     Read 10093K bytes from inner workfile: 3365K avg x 3 nonempty batches, 3366K max.
+ (seg0)     Read 483445K bytes from outer workfile: 161149K avg x 3 nonempty batches, 161223K max.
+ (seg0)   Work file set: 3 files (0 compressed), max file size 3440640, min file size 32768, compression buffer size 0 bytes
+ (seg0)   Hash chain length 1.2 avg, 8 max, using 255805 of 1048576 buckets.
+                                 ->  Seq Scan on orders  (cost=0.00..212236.00 rows=15000000 width=24) (actual time=0.521..6793.927 rows=15003291 loops=1)
+                                 ->  Hash  (cost=1685742.01..1685742.01 rows=2566313 width=19) (actual time=37708.138..37708.139 rows=312743 loops=1)
+                                       Buckets: 262144  Batches: 4  Memory Usage: 6307kB
+                                       ->  Redistribute Motion 3:3  (slice3; segments: 3)  (cost=0.00..1685742.01 rows=2566313 width=19) (actual time=21236.888..37610.570 rows=312743 loops=1)
+                                             Hash Key: lineitem.l_orderkey
+                                             ->  Seq Scan on lineitem  (cost=0.00..1634415.76 rows=2566313 width=19) (actual time=21289.944..37583.311 rows=312393 loops=1)
+                                                   Filter: ((l_shipmode = ANY ('{AIR,SHIP}'::bpchar[])) AND (l_commitdate < l_receiptdate) AND (l_shipdate < l_commitdate) AND (l_receiptdate >= '1996-01-01'::date) AND (l_receiptdate < '1997-01-01 00:00:00'::timestamp without time zone))
+                                                   Rows Removed by Filter: 59690917
+ Optimizer: Postgres-based planner
+ Planning Time: 10.726 ms
+   (slice0)    Executor memory: 87K bytes.
+ * (slice1)    Executor memory: 59K bytes avg x 3 workers, 59K bytes max (seg0).  Work_mem: 59K bytes max, 24K bytes wanted.
+ * (slice2)    Executor memory: 6732K bytes avg x 3 workers, 6753K bytes max (seg0).  Work_mem: 6307K bytes max, 19152K bytes wanted.
+   (slice3)    Executor memory: 208K bytes avg x 3 workers, 208K bytes max (seg0).
+ Memory used:  128000kB
+ Memory wanted:  77204kB
+ Execution Time: 51767.350 ms
+(43 rows)
+

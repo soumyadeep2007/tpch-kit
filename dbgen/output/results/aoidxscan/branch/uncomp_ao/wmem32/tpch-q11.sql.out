@@ -1,0 +1,42 @@
+                                                              QUERY PLAN                                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=182613.27..187146.56 rows=319997 width=36)
+   Merge Key: (sum((partsupp.ps_supplycost * (partsupp.ps_availqty)::numeric)))
+   InitPlan 1 (returns $0)  (slice5)
+     ->  Finalize Aggregate  (cost=156552.35..156552.36 rows=1 width=32)
+           ->  Gather Motion 3:1  (slice6; segments: 3)  (cost=156552.28..156552.33 rows=3 width=32)
+                 ->  Partial Aggregate  (cost=156552.28..156552.29 rows=1 width=32)
+                       ->  Hash Join  (cost=2120.34..154152.30 rows=319997 width=10)
+                             Hash Cond: (partsupp_1.ps_suppkey = supplier_1.s_suppkey)
+                             ->  Seq Scan on partsupp partsupp_1  (cost=0.00..118832.00 rows=8000000 width=14)
+                             ->  Hash  (cost=1970.34..1970.34 rows=12000 width=4)
+                                   ->  Broadcast Motion 3:3  (slice7; segments: 3)  (cost=1.14..1970.34 rows=12000 width=4)
+                                         ->  Hash Join  (cost=1.14..1810.34 rows=4000 width=4)
+                                               Hash Cond: (supplier_1.s_nationkey = nation_1.n_nationkey)
+                                               ->  Seq Scan on supplier supplier_1  (cost=0.00..1507.00 rows=100000 width=8)
+                                               ->  Hash  (cost=1.12..1.12 rows=1 width=4)
+                                                     ->  Broadcast Motion 3:3  (slice8; segments: 3)  (cost=0.00..1.12 rows=1 width=4)
+                                                           ->  Seq Scan on nation nation_1  (cost=0.00..1.10 rows=1 width=4)
+                                                                 Filter: (n_name = 'JORDAN'::bpchar)
+   ->  Sort  (cost=182613.27..182879.93 rows=106666 width=36)
+         Sort Key: (sum((partsupp.ps_supplycost * (partsupp.ps_availqty)::numeric))) DESC
+         ->  HashAggregate  (cost=167714.67..173705.23 rows=106666 width=36)
+               Group Key: partsupp.ps_partkey
+               Filter: (sum((partsupp.ps_supplycost * (partsupp.ps_availqty)::numeric)) > $0)
+               ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=2120.34..160552.24 rows=319997 width=14)
+                     Hash Key: partsupp.ps_partkey
+                     ->  Hash Join  (cost=2120.34..154152.30 rows=319997 width=14)
+                           Hash Cond: (partsupp.ps_suppkey = supplier.s_suppkey)
+                           ->  Seq Scan on partsupp  (cost=0.00..118832.00 rows=8000000 width=18)
+                           ->  Hash  (cost=1970.34..1970.34 rows=12000 width=4)
+                                 ->  Broadcast Motion 3:3  (slice3; segments: 3)  (cost=1.14..1970.34 rows=12000 width=4)
+                                       ->  Hash Join  (cost=1.14..1810.34 rows=4000 width=4)
+                                             Hash Cond: (supplier.s_nationkey = nation.n_nationkey)
+                                             ->  Seq Scan on supplier  (cost=0.00..1507.00 rows=100000 width=8)
+                                             ->  Hash  (cost=1.12..1.12 rows=1 width=4)
+                                                   ->  Broadcast Motion 3:3  (slice4; segments: 3)  (cost=0.00..1.12 rows=1 width=4)
+                                                         ->  Seq Scan on nation  (cost=0.00..1.10 rows=1 width=4)
+                                                               Filter: (n_name = 'JORDAN'::bpchar)
+ Optimizer: Postgres-based planner
+(38 rows)
+

@@ -1,0 +1,31 @@
+                                                                       QUERY PLAN                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=2525171.25..2525171.82 rows=25 width=72)
+   Merge Key: ("substring"((customer.c_phone)::text, 1, 2))
+   InitPlan 1 (returns $0)  (slice4)
+     ->  Finalize Aggregate  (cost=92350.36..92350.37 rows=1 width=32)
+           ->  Gather Motion 3:1  (slice5; segments: 3)  (cost=92350.30..92350.35 rows=3 width=32)
+                 ->  Partial Aggregate  (cost=92350.30..92350.31 rows=1 width=32)
+                       ->  Bitmap Heap Scan on customer customer_1  (cost=77348.25..91345.19 rows=402040 width=6)
+                             Recheck Cond: (("substring"((c_phone)::text, 1, 2) = ANY ('{25,30,13,20,17,19,32}'::text[])) AND (c_acctbal > 0.00))
+                             ->  Bitmap Index Scan on customer_ios_test1  (cost=0.00..77247.74 rows=383388 width=0)
+                                   Index Cond: (("substring"((c_phone)::text, 1, 2) = ANY ('{25,30,13,20,17,19,32}'::text[])) AND (c_acctbal > 0.00))
+   ->  GroupAggregate  (cost=2525171.25..2525171.48 rows=8 width=72)
+         Group Key: ("substring"((customer.c_phone)::text, 1, 2))
+         ->  Sort  (cost=2525171.25..2525171.27 rows=8 width=38)
+               Sort Key: ("substring"((customer.c_phone)::text, 1, 2))
+               ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=2501360.22..2525171.12 rows=8 width=38)
+                     Hash Key: ("substring"((customer.c_phone)::text, 1, 2))
+                     ->  Hash Anti Join  (cost=2501360.22..2525170.95 rows=8 width=38)
+                           Hash Cond: (customer.c_custkey = orders.o_custkey)
+                           ->  Bitmap Heap Scan on customer  (cost=28616.99..36238.99 rows=243411 width=26)
+                                 Recheck Cond: (("substring"((c_phone)::text, 1, 2) = ANY ('{25,30,13,20,17,19,32}'::text[])) AND (c_acctbal > $0))
+                                 ->  Bitmap Index Scan on customer_ios_test1  (cost=0.00..28556.14 rows=140533 width=0)
+                                       Index Cond: (("substring"((c_phone)::text, 1, 2) = ANY ('{25,30,13,20,17,19,32}'::text[])) AND (c_acctbal > $0))
+                           ->  Hash  (cost=2270594.23..2270594.23 rows=15000000 width=4)
+                                 ->  Redistribute Motion 3:3  (slice3; segments: 3)  (cost=0.00..2270594.23 rows=15000000 width=4)
+                                       Hash Key: orders.o_custkey
+                                       ->  Seq Scan on orders  (cost=0.00..1970594.23 rows=15000000 width=4)
+ Optimizer: Postgres-based planner
+(27 rows)
+

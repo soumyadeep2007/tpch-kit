@@ -1,0 +1,90 @@
+                                                                                                                                               QUERY PLAN                                                                                                                                               
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=6860605.00..7578243.84 rows=30755950 width=75) (actual time=297895.597..297895.739 rows=234 loops=1)
+   Merge Key: orders.o_totalprice, orders.o_orderdate, customer.c_name, customer.c_custkey, orders.o_orderkey
+   ->  GroupAggregate  (cost=6860605.00..7168164.50 rows=10251983 width=75) (actual time=297893.982..297894.467 rows=83 loops=1)
+         Group Key: orders.o_totalprice, orders.o_orderdate, customer.c_name, customer.c_custkey, orders.o_orderkey
+         ->  Sort  (cost=6860605.00..6886234.95 rows=10251983 width=48) (actual time=297893.964..297894.004 rows=581 loops=1)
+               Sort Key: orders.o_totalprice DESC, orders.o_orderdate, customer.c_name, customer.c_custkey, orders.o_orderkey
+               Sort Method:  quicksort  Memory: 316kB
+               Executor Memory: 296kB  Segments: 3  Max: 104kB (segment 2)
+               ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=3502272.01..5587947.79 rows=10251983 width=48) (actual time=292491.716..297892.739 rows=581 loops=1)
+                     Hash Key: orders.o_totalprice, orders.o_orderdate, customer.c_name, customer.c_custkey, orders.o_orderkey
+                     ->  Hash Join  (cost=3502272.01..5382908.12 rows=10251983 width=48) (actual time=267505.448..297890.715 rows=580 loops=1)
+                           Hash Cond: (lineitem.l_orderkey = orders.o_orderkey)
+                           Extra Text: (seg0)   Initial batch 0:
+ (seg0)     Wrote 17K bytes to inner workfile.
+ (seg0)     Wrote 2043484K bytes to outer workfile.
+ (seg0)   Initial batches 1..31:
+ (seg0)     Read 17K bytes from inner workfile: 1K avg x 31 nonempty batches, 2K max.
+ (seg0)     Read 2043484K bytes from outer workfile: 65919K avg x 31 nonempty batches, 66095K max.
+ (seg0)   Work file set: 31 files (0 compressed), max file size 0, min file size 0, compression buffer size 0 bytes
+ (seg0)   Hash chain length 1.0 avg, 1 max, using 234 of 4194304 buckets.
+                           ->  Seq Scan on lineitem  (cost=0.00..886186.56 rows=59999456 width=13) (actual time=0.185..16545.323 rows=60003310 loops=1)
+                           ->  Hash  (cost=3387385.80..3387385.80 rows=7689057 width=51) (actual time=253598.058..253598.059 rows=234 loops=1)
+                                 Buckets: 131072  Batches: 32  Memory Usage: 1025kB
+                                 ->  Broadcast Motion 3:3  (slice3; segments: 3)  (cost=2869977.08..3387385.80 rows=7689057 width=51) (actual time=253567.017..253595.868 rows=234 loops=1)
+                                       ->  Hash Join  (cost=2869977.08..3284865.03 rows=2563019 width=51) (actual time=252251.977..253599.069 rows=88 loops=1)
+                                             Hash Cond: (orders.o_custkey = customer.c_custkey)
+                                             Extra Text: (seg0)   Initial batch 0:
+ (seg0)     Wrote 48281K bytes to inner workfile.
+ (seg0)     Wrote 5K bytes to outer workfile.
+ (seg0)   Initial batches 1..3:
+ (seg0)     Read 48281K bytes from inner workfile: 16094K avg x 3 nonempty batches, 16128K max.
+ (seg0)     Read 5K bytes from outer workfile: 2K avg x 3 nonempty batches, 2K max.
+ (seg0)   Work file set: 3 files (0 compressed), max file size 16482304, min file size 32768, compression buffer size 0 bytes
+ (seg0)   Hash chain length 1.9 avg, 13 max, using 797265 of 1048576 buckets.
+                                             Extra Text: (seg2)   Initial batch 0:
+ (seg2)     Wrote 48371K bytes to inner workfile.
+ (seg2)     Wrote 4K bytes to outer workfile.
+ (seg2)   Initial batches 1..3:
+ (seg2)     Read 48371K bytes from inner workfile: 16124K avg x 3 nonempty batches, 16152K max.
+ (seg2)     Read 4K bytes from outer workfile: 2K avg x 3 nonempty batches, 2K max.
+ (seg2)   Work file set: 3 files (0 compressed), max file size 16515072, min file size 32768, compression buffer size 0 bytes
+ (seg2)   Hash chain length 1.9 avg, 11 max, using 798283 of 1048576 buckets.
+                                             ->  Redistribute Motion 3:3  (slice4; segments: 3)  (cost=2827339.08..3209272.68 rows=2563019 width=32) (actual time=251335.807..252414.938 rows=88 loops=1)
+                                                   Hash Key: orders.o_custkey
+                                                   ->  Hash Join  (cost=2827339.08..3158012.30 rows=2563019 width=32) (actual time=242263.191..253328.607 rows=86 loops=1)
+                                                         Hash Cond: (orders.o_orderkey = lineitem_1.l_orderkey)
+                                                         Extra Text: (seg2)   Initial batch 0:
+ (seg2)     Wrote 2K bytes to inner workfile.
+ (seg2)     Wrote 525825K bytes to outer workfile.
+ (seg2)   Initial batches 1..3:
+ (seg2)     Read 2K bytes from inner workfile: 1K avg x 3 nonempty batches, 1K max.
+ (seg2)     Read 525825K bytes from outer workfile: 175275K avg x 3 nonempty batches, 175402K max.
+ (seg2)   Work file set: 3 files (0 compressed), max file size 0, min file size 0, compression buffer size 0 bytes
+ (seg2)   Hash chain length 1.0 avg, 1 max, using 86 of 1048576 buckets.
+                                                         ->  Seq Scan on orders  (cost=0.00..216511.00 rows=15000000 width=24) (actual time=0.558..4370.453 rows=15003291 loops=1)
+                                                         ->  Hash  (cost=2792798.34..2792798.34 rows=2563019 width=8) (actual time=242155.120..242155.121 rows=86 loops=1)
+                                                               Buckets: 262144  Batches: 4  Memory Usage: 2049kB
+                                                               ->  Finalize HashAggregate  (cost=2608683.12..2767168.15 rows=2563019 width=8) (actual time=185507.609..242154.718 rows=86 loops=1)
+                                                                     Group Key: lineitem_1.l_orderkey
+                                                                     Filter: (sum(lineitem_1.l_quantity) > '314'::numeric)
+                                                                     Planned Partitions: 64
+                                                                     Rows Removed by Filter: 14997602
+                                                                     Extra Text: (seg2)   hash table(s): 1; 14997688 groups total in 560 batches, 2093027760 spill partitions; disk usage: 2339584KB; chain length 2.1 avg, 7 max; using 14997688 of 147062784 buckets; total 0 expansions.
+ 
+                                                                     ->  Redistribute Motion 3:3  (slice5; segments: 3)  (cost=1479149.93..2270393.63 rows=22092375 width=40) (actual time=52348.160..151481.703 rows=32902558 loops=1)
+                                                                           Hash Key: lineitem_1.l_orderkey
+                                                                           ->  Partial HashAggregate  (cost=1479149.93..1828546.14 rows=22092375 width=40) (actual time=52348.486..169014.707 rows=32895844 loops=1)
+                                                                                 Group Key: lineitem_1.l_orderkey
+                                                                                 Planned Partitions: 128
+                                                                                 Extra Text: (seg2)   hash table(s): 1; 32895844 groups total in 964 batches, 7659326276 spill partitions; disk usage: 2587072KB; chain length 2.1 avg, 9 max; using 32895844 of 252968960 buckets; total 0 expansions.
+ 
+                                                                                 ->  Seq Scan on lineitem lineitem_1  (cost=0.00..886186.56 rows=59999456 width=13) (actual time=0.113..11820.637 rows=60003310 loops=1)
+                                             ->  Hash  (cost=23888.00..23888.00 rows=1500000 width=23) (actual time=966.457..966.458 rows=1501094 loops=1)
+                                                   Buckets: 262144  Batches: 4  Memory Usage: 22588kB
+                                                   ->  Seq Scan on customer  (cost=0.00..23888.00 rows=1500000 width=23) (actual time=0.624..522.862 rows=1501094 loops=1)
+ Optimizer: Postgres-based planner
+ Planning Time: 15.352 ms
+   (slice0)    Executor memory: 12454K bytes.
+   (slice1)    Executor memory: 152K bytes avg x 3 workers, 156K bytes max (seg2).  Work_mem: 104K bytes max.
+ * (slice2)    Executor memory: 3096K bytes avg x 3 workers, 3096K bytes max (seg0).  Work_mem: 1025K bytes max, 1045K bytes wanted.
+ * (slice3)    Executor memory: 22843K bytes avg x 3 workers, 22875K bytes max (seg0).  Work_mem: 22588K bytes max, 84140K bytes wanted.
+ * (slice4)    Executor memory: 26735K bytes avg x 3 workers, 26736K bytes max (seg2).  Work_mem: 38929K bytes max, 6930449K bytes wanted.
+ * (slice5)    Executor memory: 23056K bytes avg x 3 workers, 23056K bytes max (seg0).  Work_mem: 33329K bytes max, 11423761K bytes wanted.
+ Memory used:  128000kB
+ Memory wanted:  68543860kB
+ Execution Time: 297916.279 ms
+(86 rows)
+

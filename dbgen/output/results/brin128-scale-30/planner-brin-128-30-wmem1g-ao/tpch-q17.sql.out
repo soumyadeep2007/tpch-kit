@@ -1,0 +1,46 @@
+                                                                                                                                 QUERY PLAN                                                                                                                                 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=2869358.42..2869358.43 rows=1 width=32) (actual time=177409.234..177409.237 rows=1 loops=1)
+   ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=2869358.35..2869358.40 rows=3 width=32) (actual time=177160.948..177409.198 rows=3 loops=1)
+         ->  Partial Aggregate  (cost=2869358.35..2869358.36 rows=1 width=32) (actual time=177408.235..177408.236 rows=1 loops=1)
+               ->  Hash Join  (cost=1823476.82..2869114.32 rows=97610 width=8) (actual time=135160.450..177405.598 rows=5350 loops=1)
+                     Hash Cond: (lineitem.l_partkey = part.p_partkey)
+                     Join Filter: (lineitem.l_quantity < ((0.2 * avg(lineitem_1.l_quantity))))
+                     Rows Removed by Join Filter: 54109
+                     Extra Text: (seg0)   Hash chain length 1.0 avg, 3 max, using 5644 of 65536 buckets.
+                     ->  Seq Scan on lineitem  (cost=0.00..884422.56 rows=59999456 width=17) (actual time=0.683..35300.936 rows=60003310 loops=1)
+                     ->  Hash  (cost=1823110.78..1823110.78 rows=29283 width=40) (actual time=135145.359..135145.359 rows=5910 loops=1)
+                           Buckets: 65536  Batches: 1  Memory Usage: 826kB
+                           ->  Broadcast Motion 3:3  (slice2; segments: 3)  (cost=1771904.87..1823110.78 rows=29283 width=40) (actual time=125255.432..135143.327 rows=5910 loops=1)
+                                 ->  Hash Join  (cost=1771904.87..1822720.34 rows=9761 width=40) (actual time=124415.149..135140.464 rows=2006 loops=1)
+                                       Hash Cond: (lineitem_1.l_partkey = part.p_partkey)
+                                       Extra Text: (seg1)   Hash chain length 1.0 avg, 2 max, using 1990 of 131072 buckets.
+                                       ->  Finalize HashAggregate  (cost=1770939.91..1798479.01 rows=1835940 width=36) (actual time=124374.388..134599.116 rows=2001127 loops=1)
+                                             Group Key: lineitem_1.l_partkey
+                                             Planned Partitions: 8
+                                             Extra Text: (seg0)   hash table(s): 1; 1999439 groups total in 68 batches, 45428660 spill partitions; disk usage: 357152KB; chain length 2.1 avg, 7 max; using 1999439 of 18087936 buckets; total 0 expansions.
+ 
+                                             ->  Redistribute Motion 3:3  (slice3; segments: 3)  (cost=1477385.93..1729631.32 rows=5507811 width=36) (actual time=59641.590..117811.873 rows=6003137 loops=1)
+                                                   Hash Key: lineitem_1.l_partkey
+                                                   ->  Partial HashAggregate  (cost=1477385.93..1619475.10 rows=5507811 width=36) (actual time=59678.498..121233.632 rows=5999772 loops=1)
+                                                         Group Key: lineitem_1.l_partkey
+                                                         Planned Partitions: 16
+                                                         Extra Text: (seg0)   hash table(s): 1; 5999772 groups total in 156 batches, 945926396 spill partitions; disk usage: 1697856KB; chain length 2.0 avg, 6 max; using 5999772 of 82313216 buckets; total 0 expansions.
+ 
+                                                         ->  Seq Scan on lineitem lineitem_1  (cost=0.00..884422.56 rows=59999456 width=9) (actual time=0.440..35468.777 rows=60003310 loops=1)
+                                       ->  Hash  (cost=832.05..832.05 rows=10633 width=4) (actual time=37.228..37.228 rows=2006 loops=1)
+                                             Buckets: 131072  Batches: 1  Memory Usage: 1095kB
+                                             ->  Index Only Scan using part_p_container_p_brand_p_partkey_idx on part  (cost=0.18..832.05 rows=10633 width=4) (actual time=13.876..36.450 rows=2006 loops=1)
+                                                   Index Cond: ((p_container = 'SM BOX'::bpchar) AND (p_brand = 'Brand#53'::bpchar))
+                                                   Heap Fetches: 0
+ Optimizer: Postgres-based planner
+ Planning Time: 7.497 ms
+   (slice0)    Executor memory: 18534K bytes.
+   (slice1)    Executor memory: 1053K bytes avg x 3 workers, 1053K bytes max (seg0).  Work_mem: 826K bytes max.
+ * (slice2)    Executor memory: 32682K bytes avg x 3 workers, 32686K bytes max (seg2).  Work_mem: 55569K bytes max, 1333265K bytes wanted.
+ * (slice3)    Executor memory: 28452K bytes avg x 3 workers, 28452K bytes max (seg0).  Work_mem: 45617K bytes max, 2633745K bytes wanted.
+ Memory used:  128000kB
+ Memory wanted:  10535976kB
+ Execution Time: 177425.171 ms
+(42 rows)
+

@@ -1,0 +1,23 @@
+                                                                                                                                          QUERY PLAN                                                                                                                                           
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=2134108.77..2134108.87 rows=7 width=27)
+   Merge Key: lineitem.l_shipmode
+   ->  Sort  (cost=2134108.77..2134108.77 rows=2 width=27)
+         Sort Key: lineitem.l_shipmode
+         ->  Finalize HashAggregate  (cost=2134108.73..2134108.75 rows=2 width=27)
+               Group Key: lineitem.l_shipmode
+               ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=2134108.47..2134108.68 rows=7 width=27)
+                     Hash Key: lineitem.l_shipmode
+                     ->  Partial HashAggregate  (cost=2134108.47..2134108.54 rows=7 width=27)
+                           Group Key: lineitem.l_shipmode
+                           ->  Hash Join  (cost=1720081.21..2089970.53 rows=2522168 width=27)
+                                 Hash Cond: (orders.o_orderkey = lineitem.l_orderkey)
+                                 ->  Seq Scan on orders  (cost=0.00..212236.00 rows=15000000 width=24)
+                                 ->  Hash  (cost=1684859.11..1684859.11 rows=2522168 width=19)
+                                       ->  Redistribute Motion 3:3  (slice3; segments: 3)  (cost=0.00..1684859.11 rows=2522168 width=19)
+                                             Hash Key: lineitem.l_orderkey
+                                             ->  Seq Scan on lineitem  (cost=0.00..1634415.76 rows=2522168 width=19)
+                                                   Filter: ((l_shipmode = ANY ('{AIR,SHIP}'::bpchar[])) AND (l_commitdate < l_receiptdate) AND (l_shipdate < l_commitdate) AND (l_receiptdate >= '1996-01-01'::date) AND (l_receiptdate < '1997-01-01 00:00:00'::timestamp without time zone))
+ Optimizer: Postgres-based planner
+(19 rows)
+

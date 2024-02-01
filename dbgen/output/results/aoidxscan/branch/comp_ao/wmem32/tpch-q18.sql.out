@@ -1,0 +1,33 @@
+                                                                QUERY PLAN                                                                
+------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=27560712.68..28960700.00 rows=59999456 width=75)
+   Merge Key: orders.o_totalprice, orders.o_orderdate, customer.c_name, customer.c_custkey, orders.o_orderkey
+   ->  GroupAggregate  (cost=27560712.68..28160707.24 rows=19999819 width=75)
+         Group Key: orders.o_totalprice, orders.o_orderdate, customer.c_name, customer.c_custkey, orders.o_orderkey
+         ->  Sort  (cost=27560712.68..27610712.23 rows=19999819 width=48)
+               Sort Key: orders.o_totalprice DESC, orders.o_orderdate, customer.c_name, customer.c_custkey, orders.o_orderkey
+               ->  Hash Join  (cost=14008785.39..24981578.80 rows=19999819 width=48)
+                     Hash Cond: (orders.o_custkey = customer.c_custkey)
+                     ->  Hash Join  (cost=13621191.30..24263670.60 rows=19999819 width=29)
+                           Hash Cond: (orders.o_orderkey = lineitem_1.l_orderkey)
+                           ->  Hash Join  (cost=2180067.23..12429789.50 rows=26999692 width=37)
+                                 Hash Cond: (lineitem.l_orderkey = orders.o_orderkey)
+                                 ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=0.00..9647858.78 rows=59999456 width=13)
+                                       Hash Key: lineitem.l_orderkey
+                                       ->  Seq Scan on lineitem  (cost=0.00..8447869.66 rows=59999456 width=13)
+                                 ->  Hash  (cost=1970594.23..1970594.23 rows=15000000 width=24)
+                                       ->  Seq Scan on orders  (cost=0.00..1970594.23 rows=15000000 width=24)
+                           ->  Hash  (cost=11291383.85..11291383.85 rows=11111137 width=8)
+                                 ->  HashAggregate  (cost=10533788.25..11180272.48 rows=11111137 width=8)
+                                       Group Key: lineitem_1.l_orderkey
+                                       Filter: (sum(lineitem_1.l_quantity) > '314'::numeric)
+                                       Planned Partitions: 128
+                                       ->  Redistribute Motion 3:3  (slice3; segments: 3)  (cost=0.00..9647858.78 rows=59999456 width=13)
+                                             Hash Key: lineitem_1.l_orderkey
+                                             ->  Seq Scan on lineitem lineitem_1  (cost=0.00..8447869.66 rows=59999456 width=13)
+                     ->  Hash  (cost=324752.09..324752.09 rows=4500000 width=23)
+                           ->  Broadcast Motion 3:3  (slice4; segments: 3)  (cost=0.00..324752.09 rows=4500000 width=23)
+                                 ->  Seq Scan on customer  (cost=0.00..264752.09 rows=1500000 width=23)
+ Optimizer: Postgres-based planner
+(29 rows)
+

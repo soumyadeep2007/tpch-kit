@@ -1,0 +1,25 @@
+                                                                                    QUERY PLAN                                                                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=1268255.41..1268255.43 rows=1 width=32) (actual time=37046.950..37046.952 rows=1 loops=1)
+   ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=1268255.33..1268255.38 rows=3 width=64) (actual time=37018.277..37046.919 rows=3 loops=1)
+         ->  Partial Aggregate  (cost=1268255.33..1268255.34 rows=1 width=64) (actual time=37014.412..37014.414 rows=1 loops=1)
+               ->  Hash Join  (cost=1209011.96..1255013.41 rows=756681 width=33) (actual time=34532.859..36404.341 rows=748754 loops=1)
+                     Hash Cond: (part.p_partkey = lineitem.l_partkey)
+                     Extra Text: (seg0)   Hash chain length 2.1 avg, 12 max, using 364720 of 524288 buckets.
+                     ->  Seq Scan on part  (cost=0.00..29553.00 rows=2000000 width=25) (actual time=0.498..991.595 rows=2001127 loops=1)
+                     ->  Hash  (cost=1199553.45..1199553.45 rows=756681 width=16) (actual time=34529.898..34529.899 rows=748754 loops=1)
+                           Buckets: 524288  Batches: 1  Memory Usage: 41395kB
+                           ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=0.00..1199553.45 rows=756681 width=16) (actual time=20755.748..34336.442 rows=748754 loops=1)
+                                 Hash Key: lineitem.l_partkey
+                                 ->  Seq Scan on lineitem  (cost=0.00..1184419.84 rows=756681 width=16) (actual time=19141.690..34159.382 rows=748419 loops=1)
+                                       Filter: ((l_shipdate >= '1996-04-01'::date) AND (l_shipdate < '1996-05-01 00:00:00'::timestamp without time zone))
+                                       Rows Removed by Filter: 59254891
+ Optimizer: Postgres-based planner
+ Planning Time: 9.955 ms
+   (slice0)    Executor memory: 60K bytes.
+   (slice1)    Executor memory: 43859K bytes avg x 3 workers, 43901K bytes max (seg0).  Work_mem: 41395K bytes max.
+   (slice2)    Executor memory: 207K bytes avg x 3 workers, 207K bytes max (seg0).
+ Memory used:  128000kB
+ Execution Time: 37057.165 ms
+(21 rows)
+

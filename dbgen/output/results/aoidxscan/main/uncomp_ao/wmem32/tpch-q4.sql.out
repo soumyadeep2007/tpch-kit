@@ -1,0 +1,30 @@
+                                                                                           QUERY PLAN                                                                                           
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=1570348.04..1570348.11 rows=5 width=24)
+   Merge Key: orders.o_orderpriority
+   ->  Sort  (cost=1570348.04..1570348.04 rows=2 width=24)
+         Sort Key: orders.o_orderpriority
+         ->  Finalize HashAggregate  (cost=1570348.01..1570348.03 rows=2 width=24)
+               Group Key: orders.o_orderpriority
+               ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=1570347.84..1570347.99 rows=5 width=24)
+                     Hash Key: orders.o_orderpriority
+                     ->  Partial HashAggregate  (cost=1570347.84..1570347.89 rows=5 width=24)
+                           Group Key: orders.o_orderpriority
+                           ->  Result  (cost=1565201.76..1567774.80 rows=514607 width=16)
+                                 ->  Unique  (cost=1565201.76..1567774.80 rows=514607 width=16)
+                                       Group Key: (RowIdExpr)
+                                       ->  Sort  (cost=1565201.76..1566488.28 rows=514607 width=16)
+                                             Sort Key: (RowIdExpr)
+                                             ->  Redistribute Motion 3:3  (slice3; segments: 3)  (cost=335710.25..1516383.25 rows=514607 width=16)
+                                                   Hash Key: (RowIdExpr)
+                                                   ->  Hash Join  (cost=335710.25..1506091.10 rows=514607 width=16)
+                                                         Hash Cond: (lineitem.l_orderkey = orders.o_orderkey)
+                                                         ->  Seq Scan on lineitem  (cost=0.00..1034421.20 rows=19999819 width=8)
+                                                               Filter: (l_commitdate < l_receiptdate)
+                                                         ->  Hash  (cost=310912.00..310912.00 rows=1775700 width=24)
+                                                               ->  Broadcast Motion 3:3  (slice4; segments: 3)  (cost=0.00..310912.00 rows=1775700 width=24)
+                                                                     ->  Seq Scan on orders  (cost=0.00..287236.00 rows=591900 width=24)
+                                                                           Filter: ((o_orderdate >= '1996-09-01'::date) AND (o_orderdate < '1996-12-01 00:00:00'::timestamp without time zone))
+ Optimizer: Postgres-based planner
+(26 rows)
+

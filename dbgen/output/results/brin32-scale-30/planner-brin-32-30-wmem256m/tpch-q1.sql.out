@@ -1,0 +1,28 @@
+                                                                              QUERY PLAN                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=3435862.34..3435862.43 rows=6 width=236) (actual time=161356.160..161356.164 rows=4 loops=1)
+   Merge Key: l_returnflag, l_linestatus
+   ->  Sort  (cost=3435862.34..3435862.35 rows=2 width=236) (actual time=161353.685..161353.744 rows=2 loops=1)
+         Sort Key: l_returnflag, l_linestatus
+         Sort Method:  quicksort  Memory: 75kB
+         Executor Memory: 177kB  Segments: 3  Max: 59kB (segment 0)
+         ->  Finalize HashAggregate  (cost=3435862.28..3435862.33 rows=2 width=236) (actual time=161353.540..161353.566 rows=2 loops=1)
+               Group Key: l_returnflag, l_linestatus
+               Peak Memory Usage: 0 kB
+               ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=3435861.74..3435862.02 rows=6 width=236) (actual time=155037.765..161353.374 rows=6 loops=1)
+                     Hash Key: l_returnflag, l_linestatus
+                     ->  Partial HashAggregate  (cost=3435861.74..3435861.90 rows=6 width=236) (actual time=156021.663..156021.681 rows=4 loops=1)
+                           Group Key: l_returnflag, l_linestatus
+                           Peak Memory Usage: 0 kB
+                           ->  Seq Scan on lineitem  (cost=0.00..1036166.40 rows=59992383 width=25) (actual time=0.103..21436.505 rows=60003104 loops=1)
+                                 Filter: (l_shipdate <= '1998-11-30 23:58:15'::timestamp without time zone)
+                                 Rows Removed by Filter: 206
+ Optimizer: Postgres query optimizer
+ Planning Time: 3.024 ms
+   (slice0)    Executor memory: 107K bytes.
+   (slice1)    Executor memory: 61K bytes avg x 3 workers, 61K bytes max (seg0).  Work_mem: 59K bytes max.
+   (slice2)    Executor memory: 59K bytes avg x 3 workers, 59K bytes max (seg0).  Work_mem: 24K bytes max.
+ Memory used:  128000kB
+ Execution Time: 161363.070 ms
+(24 rows)
+

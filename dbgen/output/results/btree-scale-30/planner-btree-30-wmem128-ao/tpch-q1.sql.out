@@ -1,0 +1,33 @@
+                                                                              QUERY PLAN                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=3434164.22..3434164.31 rows=6 width=236) (actual time=179154.820..179154.823 rows=4 loops=1)
+   Merge Key: l_returnflag, l_linestatus
+   ->  Sort  (cost=3434164.22..3434164.23 rows=2 width=236) (actual time=179152.766..179152.813 rows=2 loops=1)
+         Sort Key: l_returnflag, l_linestatus
+         Sort Method:  quicksort  Memory: 75kB
+         Executor Memory: 177kB  Segments: 3  Max: 59kB (segment 0)
+         ->  Finalize HashAggregate  (cost=3434164.16..3434164.21 rows=2 width=236) (actual time=179152.542..179152.553 rows=2 loops=1)
+               Group Key: l_returnflag, l_linestatus
+               Extra Text: (seg0)   hash table(s): 1; chain length 1.0 avg, 1 max; using 1 of 4 buckets; total 1 expansions.
+ 
+               Extra Text: (seg1)   hash table(s): 1; chain length 1.0 avg, 1 max; using 2 of 4 buckets; total 1 expansions.
+ 
+               ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=3434163.62..3434163.90 rows=6 width=236) (actual time=178495.170..179152.392 rows=6 loops=1)
+                     Hash Key: l_returnflag, l_linestatus
+                     ->  Partial HashAggregate  (cost=3434163.62..3434163.78 rows=6 width=236) (actual time=179151.546..179151.570 rows=4 loops=1)
+                           Group Key: l_returnflag, l_linestatus
+                           Extra Text: (seg0)   hash table(s): 1; chain length 1.0 avg, 1 max; using 4 of 8 buckets; total 0 expansions.
+ 
+                           ->  Seq Scan on lineitem  (cost=0.00..1034421.20 rows=59993560 width=25) (actual time=0.412..45546.812 rows=60003104 loops=1)
+                                 Filter: (l_shipdate <= '1998-11-30 23:58:15'::timestamp without time zone)
+                                 Rows Removed by Filter: 206
+ Optimizer: Postgres-based planner
+ Planning Time: 3.113 ms
+   (slice0)    Executor memory: 106K bytes.
+ * (slice1)    Executor memory: 62K bytes avg x 3 workers, 62K bytes max (seg0).  Work_mem: 59K bytes max, 24K bytes wanted.
+ * (slice2)    Executor memory: 230K bytes avg x 3 workers, 230K bytes max (seg0).  Work_mem: 24K bytes max, 24K bytes wanted.
+ Memory used:  128000kB
+ Memory wanted:  372kB
+ Execution Time: 179161.564 ms
+(29 rows)
+

@@ -1,0 +1,53 @@
+                                                                                             QUERY PLAN                                                                                              
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=1469358.18..1469358.25 rows=5 width=24) (actual time=48507.956..48507.964 rows=5 loops=1)
+   Merge Key: orders.o_orderpriority
+   ->  Sort  (cost=1469358.18..1469358.18 rows=2 width=24) (actual time=48502.477..48502.488 rows=2 loops=1)
+         Sort Key: orders.o_orderpriority
+         Sort Method:  quicksort  Memory: 75kB
+         Executor Memory: 177kB  Segments: 3  Max: 59kB (segment 0)
+         ->  Finalize HashAggregate  (cost=1469358.15..1469358.17 rows=2 width=24) (actual time=48502.329..48502.330 rows=2 loops=1)
+               Group Key: orders.o_orderpriority
+               Peak Memory Usage: 0 kB
+               ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=1469357.98..1469358.13 rows=5 width=24) (actual time=48480.675..48502.301 rows=6 loops=1)
+                     Hash Key: orders.o_orderpriority
+                     ->  Partial HashAggregate  (cost=1469357.98..1469358.03 rows=5 width=24) (actual time=48499.205..48499.207 rows=5 loops=1)
+                           Group Key: orders.o_orderpriority
+                           Peak Memory Usage: 0 kB
+                           ->  HashAggregate  (cost=1462837.06..1467184.34 rows=434728 width=16) (actual time=47940.957..48300.590 rows=520631 loops=1)
+                                 Group Key: (RowIdExpr)
+                                 Peak Memory Usage: 0 kB
+                                 ->  Redistribute Motion 3:3  (slice3; segments: 3)  (cost=287141.67..1461750.24 rows=434728 width=16) (actual time=25868.592..46883.636 rows=1434616 loops=1)
+                                       Hash Key: (RowIdExpr)
+                                       ->  Hash Join  (cost=287141.67..1453055.69 rows=434728 width=16) (actual time=25570.096..46997.056 rows=1434573 loops=1)
+                                             Hash Cond: (lineitem.l_orderkey = orders.o_orderkey)
+                                             Extra Text: (seg0)   Initial batch 0:
+ (seg0)     Wrote 43143K bytes to inner workfile.
+ (seg0)     Wrote 518481K bytes to outer workfile.
+ (seg0)   Initial batch 1:
+ (seg0)     Read 43143K bytes from inner workfile.
+ (seg0)     Read 518481K bytes from outer workfile.
+ (seg0)   Hash chain length 3.4 avg, 14 max, using 503718 of 524288 buckets.
+                                             ->  Seq Scan on lineitem  (cost=0.00..1036166.40 rows=19999291 width=8) (actual time=0.877..22204.603 rows=37938467 loops=1)
+                                                   Filter: (l_commitdate < l_receiptdate)
+                                                   Rows Removed by Filter: 22064843
+                                             ->  Hash  (cost=262305.05..262305.05 rows=1778450 width=24) (actual time=906.277..906.278 rows=1701175 loops=1)
+                                                   Buckets: 262144  Batches: 2  Memory Usage: 55273kB
+                                                   ->  Broadcast Motion 3:3  (slice4; segments: 3)  (cost=166.18..262305.05 rows=1778450 width=24) (actual time=4.845..511.784 rows=1701175 loops=1)
+                                                         ->  Bitmap Heap Scan on orders  (cost=166.18..238592.38 rows=592817 width=24) (actual time=3.979..398.123 rows=567512 loops=1)
+                                                               Recheck Cond: ((o_orderdate >= '1996-09-01'::date) AND (o_orderdate < '1996-12-01 00:00:00'::timestamp without time zone))
+                                                               Rows Removed by Index Recheck: 2670
+                                                               ->  Bitmap Index Scan on orders_o_orderdate_idx  (cost=0.00..17.98 rows=594088 width=0) (actual time=2.831..2.831 rows=25600 loops=1)
+                                                                     Index Cond: ((o_orderdate >= '1996-09-01'::date) AND (o_orderdate < '1996-12-01 00:00:00'::timestamp without time zone))
+ Optimizer: Postgres query optimizer
+ Planning Time: 12.853 ms
+   (slice0)    Executor memory: 12391K bytes.
+   (slice1)    Executor memory: 59K bytes avg x 3 workers, 59K bytes max (seg0).  Work_mem: 59K bytes max.
+   (slice2)    Executor memory: 57358K bytes avg x 3 workers, 58073K bytes max (seg1).  Work_mem: 65681K bytes max.
+ * (slice3)    Executor memory: 55449K bytes avg x 3 workers, 55449K bytes max (seg0).  Work_mem: 55273K bytes max, 108372K bytes wanted.
+   (slice4)    Executor memory: 43170K bytes avg x 3 workers, 43340K bytes max (seg1).
+ Memory used:  128000kB
+ Memory wanted:  650928kB
+ Execution Time: 48545.115 ms
+(49 rows)
+

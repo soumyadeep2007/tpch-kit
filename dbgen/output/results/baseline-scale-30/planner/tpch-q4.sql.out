@@ -1,0 +1,55 @@
+                                                                                                                 QUERY PLAN                                                                                                                 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=1507165.24..1507165.31 rows=5 width=24) (actual time=63972.155..63972.165 rows=5 loops=1)
+   Merge Key: orders.o_orderpriority
+   ->  Sort  (cost=1507165.24..1507165.25 rows=2 width=24) (actual time=63968.602..63968.612 rows=2 loops=1)
+         Sort Key: orders.o_orderpriority
+         Sort Method:  quicksort  Memory: 75kB
+         Executor Memory: 177kB  Segments: 3  Max: 59kB (segment 0)
+         ->  Finalize HashAggregate  (cost=1507165.21..1507165.23 rows=2 width=24) (actual time=63968.427..63968.447 rows=2 loops=1)
+               Group Key: orders.o_orderpriority
+               Extra Text: (seg0)   hash table(s): 1; chain length 1.0 avg, 1 max; using 2 of 4 buckets; total 1 expansions.
+ 
+               ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=1507165.04..1507165.19 rows=5 width=24) (actual time=63963.398..63968.407 rows=6 loops=1)
+                     Hash Key: orders.o_orderpriority
+                     ->  Partial HashAggregate  (cost=1507165.04..1507165.09 rows=5 width=24) (actual time=63966.422..63966.425 rows=5 loops=1)
+                           Group Key: orders.o_orderpriority
+                           Extra Text: (seg0)   hash table(s): 1; chain length 1.0 avg, 1 max; using 5 of 8 buckets; total 0 expansions.
+ 
+                           ->  HashAggregate  (cost=1502910.50..1505746.86 rows=283636 width=16) (actual time=63281.140..63801.955 rows=520892 loops=1)
+                                 Group Key: (RowIdExpr)
+                                 Extra Text: (seg0)   hash table(s): 1; 519250 groups total in 4 batches, 3218496 spill partitions; disk usage: 44704KB; chain length 2.6 avg, 14 max; using 519250 of 2621440 buckets; total 1 expansions.
+ 
+                                 ->  Redistribute Motion 3:3  (slice3; segments: 3)  (cost=330118.63..1502201.41 rows=283636 width=16) (actual time=29669.641..62270.243 rows=1434923 loops=1)
+                                       Hash Key: (RowIdExpr)
+                                       ->  Hash Join  (cost=330118.63..1496528.68 rows=283636 width=16) (actual time=29379.202..62229.642 rows=1434573 loops=1)
+                                             Hash Cond: (lineitem.l_orderkey = orders.o_orderkey)
+                                             Extra Text: (seg0)   Initial batch 0:
+ (seg0)     Wrote 43143K bytes to inner workfile.
+ (seg0)     Wrote 2672416K bytes to outer workfile.
+ (seg0)   Initial batch 1:
+ (seg0)     Read 43143K bytes from inner workfile.
+ (seg0)     Read 2672430K bytes from outer workfile.
+ (seg0)   Work file set: 1 files (0 compressed), max file size 44171264, min file size 32768, compression buffer size 0 bytes
+ (seg0)   Hash chain length 3.4 avg, 14 max, using 503718 of 524288 buckets.
+                                             ->  Seq Scan on lineitem  (cost=0.00..1034421.20 rows=19999819 width=8) (actual time=0.552..23678.202 rows=37938467 loops=1)
+                                                   Filter: (l_commitdate < l_receiptdate)
+                                                   Rows Removed by Filter: 22064843
+                                             ->  Hash  (cost=309368.97..309368.97 rows=1659973 width=24) (actual time=5245.832..5245.832 rows=1701175 loops=1)
+                                                   Buckets: 262144  Batches: 2  Memory Usage: 55273kB
+                                                   ->  Broadcast Motion 3:3  (slice4; segments: 3)  (cost=0.00..309368.97 rows=1659973 width=24) (actual time=3086.891..4828.557 rows=1701175 loops=1)
+                                                         ->  Seq Scan on orders  (cost=0.00..287236.00 rows=553324 width=24) (actual time=3089.587..4584.004 rows=567512 loops=1)
+                                                               Filter: ((o_orderdate >= '1996-09-01'::date) AND (o_orderdate < '1996-12-01 00:00:00'::timestamp without time zone))
+                                                               Rows Removed by Filter: 14435779
+ Optimizer: Postgres-based planner
+ Planning Time: 8.674 ms
+   (slice0)    Executor memory: 6239K bytes.
+ * (slice1)    Executor memory: 59K bytes avg x 3 workers, 59K bytes max (seg0).  Work_mem: 59K bytes max, 24K bytes wanted.
+ * (slice2)    Executor memory: 29950K bytes avg x 3 workers, 30090K bytes max (seg2).  Work_mem: 32913K bytes max, 65553K bytes wanted.
+ * (slice3)    Executor memory: 55450K bytes avg x 3 workers, 55450K bytes max (seg0).  Work_mem: 55273K bytes max, 108372K bytes wanted.
+   (slice4)    Executor memory: 38K bytes avg x 3 workers, 38K bytes max (seg0).
+ Memory used:  128000kB
+ Memory wanted:  542557kB
+ Execution Time: 63995.458 ms
+(51 rows)
+

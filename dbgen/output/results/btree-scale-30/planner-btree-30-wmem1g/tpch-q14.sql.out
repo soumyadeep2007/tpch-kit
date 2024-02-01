@@ -1,0 +1,24 @@
+                                                                                       QUERY PLAN                                                                                       
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=188677.36..188677.37 rows=1 width=32) (actual time=2978.765..2978.767 rows=1 loops=1)
+   ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=188677.27..188677.32 rows=3 width=64) (actual time=2973.738..2978.730 rows=3 loops=1)
+         ->  Partial Aggregate  (cost=188677.27..188677.28 rows=1 width=64) (actual time=2972.079..2972.081 rows=1 loops=1)
+               ->  Hash Join  (cost=128831.91..175435.36 rows=756681 width=33) (actual time=1001.178..2384.456 rows=748754 loops=1)
+                     Hash Cond: (part.p_partkey = lineitem.l_partkey)
+                     Extra Text: (seg0)   Hash chain length 2.1 avg, 12 max, using 364720 of 524288 buckets.
+                     ->  Seq Scan on part  (cost=0.00..30155.00 rows=2000000 width=25) (actual time=0.083..434.608 rows=2001127 loops=1)
+                     ->  Hash  (cost=119373.40..119373.40 rows=756681 width=16) (actual time=999.597..999.597 rows=748754 loops=1)
+                           Buckets: 524288  Batches: 1  Memory Usage: 41395kB
+                           ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=0.19..119373.40 rows=756681 width=16) (actual time=1.781..799.194 rows=748754 loops=1)
+                                 Hash Key: lineitem.l_partkey
+                                 ->  Index Scan using lineitem_l_shipdate_idx on lineitem  (cost=0.19..104239.79 rows=756681 width=16) (actual time=3.428..640.630 rows=748419 loops=1)
+                                       Index Cond: ((l_shipdate >= '1996-04-01'::date) AND (l_shipdate < '1996-05-01 00:00:00'::timestamp without time zone))
+ Optimizer: Postgres-based planner
+ Planning Time: 4.239 ms
+   (slice0)    Executor memory: 70K bytes.
+   (slice1)    Executor memory: 43689K bytes avg x 3 workers, 43730K bytes max (seg0).  Work_mem: 41395K bytes max.
+   (slice2)    Executor memory: 53K bytes avg x 3 workers, 53K bytes max (seg0).
+ Memory used:  128000kB
+ Execution Time: 2985.263 ms
+(20 rows)
+

@@ -1,0 +1,17 @@
+                                                                                QUERY PLAN                                                                                
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=1197608.67..1197608.68 rows=1 width=32) (actual time=7934.601..7934.602 rows=1 loops=1)
+   ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=1197608.60..1197608.65 rows=3 width=32) (actual time=7916.949..7934.585 rows=3 loops=1)
+         ->  Partial Aggregate  (cost=1197608.60..1197608.61 rows=1 width=32) (actual time=7917.965..7917.965 rows=1 loops=1)
+               ->  Index Scan using lineitem_l_shipdate_idx on lineitem  (cost=0.19..1178978.71 rows=3725977 width=12) (actual time=0.210..7285.093 rows=1192679 loops=1)
+                     Index Cond: ((l_shipdate >= '1995-01-01'::date) AND (l_shipdate < '1996-01-01 00:00:00'::timestamp without time zone))
+                     Filter: ((l_discount >= 0.03) AND (l_discount <= 0.05) AND (l_quantity < '25'::numeric))
+                     Rows Removed by Filter: 7917752
+ Optimizer: Postgres-based planner
+ Planning Time: 2.835 ms
+   (slice0)    Executor memory: 45K bytes.
+   (slice1)    Executor memory: 53K bytes avg x 3 workers, 53K bytes max (seg0).
+ Memory used:  128000kB
+ Execution Time: 7937.826 ms
+(13 rows)
+

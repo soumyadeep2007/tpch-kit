@@ -1,0 +1,61 @@
+CREATE VIEW
+                                                                                         QUERY PLAN                                                                                          
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=1177380.29..1177384.61 rows=305 width=104) (actual time=7243.716..7243.721 rows=1 loops=1)
+   Merge Key: supplier.s_suppkey
+   InitPlan 1 (returns $0)  (slice3)
+     ->  Finalize Aggregate  (cost=1174799.97..1174799.98 rows=1 width=32) (actual time=7337.327..7337.327 rows=1 loops=1)
+           ->  Gather Motion 3:1  (slice4; segments: 3)  (cost=1174799.91..1174799.96 rows=3 width=32) (actual time=7311.708..7337.311 rows=3 loops=1)
+                 ->  Partial Aggregate  (cost=1174799.91..1174799.92 rows=1 width=32) (actual time=7334.329..7334.330 rows=1 loops=1)
+                       ->  Finalize HashAggregate  (cost=1172262.01..1173530.96 rows=101516 width=36) (actual time=7015.023..7293.938 rows=100172 loops=1)
+                             Group Key: lineitem_1.l_suppkey
+                             Peak Memory Usage: 0 kB
+                             ->  Redistribute Motion 3:3  (slice5; segments: 3)  (cost=1160081.48..1169978.16 rows=304513 width=36) (actual time=3984.097..6599.883 rows=300379 loops=1)
+                                   Hash Key: lineitem_1.l_suppkey
+                                   ->  Partial HashAggregate  (cost=1160081.48..1163887.90 rows=304513 width=36) (actual time=3981.153..6660.026 rows=299862 loops=1)
+                                         Group Key: lineitem_1.l_suppkey
+                                         Peak Memory Usage: 0 kB
+                                         ->  Bitmap Heap Scan on lineitem lineitem_1  (cost=612.42..1137350.14 rows=2273134 width=16) (actual time=11.010..1253.865 rows=2295994 loops=1)
+                                               Recheck Cond: ((l_shipdate >= '1997-05-01'::date) AND (l_shipdate < '1997-08-01 00:00:00'::timestamp without time zone))
+                                               Rows Removed by Index Recheck: 18315
+                                               ->  Bitmap Index Scan on lineitem_l_shipdate_idx  (cost=0.00..44.14 rows=2274154 width=0) (actual time=7.427..7.428 rows=110400 loops=1)
+                                                     Index Cond: ((l_shipdate >= '1997-05-01'::date) AND (l_shipdate < '1997-08-01 00:00:00'::timestamp without time zone))
+   ->  Sort  (cost=1177380.29..1177380.55 rows=102 width=104) (actual time=7242.916..7242.922 rows=1 loops=1)
+         Sort Key: supplier.s_suppkey
+         Sort Method:  quicksort  Memory: 75kB
+         Executor Memory: 177kB  Segments: 3  Max: 59kB (segment 0)
+         ->  Hash Join  (cost=1175563.39..1177376.91 rows=102 width=104) (actual time=7216.959..7242.757 rows=1 loops=1)
+               Hash Cond: (supplier.s_suppkey = revenue0.supplier_no)
+               Extra Text: (seg0)   Hash chain length 1.0 avg, 1 max, using 1 of 65536 buckets.
+               ->  Seq Scan on supplier  (cost=0.00..1550.00 rows=100000 width=72) (actual time=0.052..21.468 rows=99877 loops=1)
+               ->  Hash  (cost=1175562.12..1175562.12 rows=102 width=36) (actual time=7205.385..7205.386 rows=1 loops=1)
+                     Buckets: 65536  Batches: 1  Memory Usage: 513kB
+                     ->  Subquery Scan on revenue0  (cost=1173784.58..1175562.12 rows=102 width=36) (actual time=7147.144..7205.379 rows=1 loops=1)
+                           ->  Finalize HashAggregate  (cost=1173784.58..1175561.11 rows=102 width=36) (actual time=7147.142..7205.375 rows=1 loops=1)
+                                 Group Key: lineitem.l_suppkey
+                                 Filter: (sum((lineitem.l_extendedprice * ('1'::numeric - lineitem.l_discount))) = $0)
+                                 Peak Memory Usage: 0 kB
+                                 Rows Removed by Filter: 99876
+                                 ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=1160081.48..1169978.16 rows=304513 width=36) (actual time=3933.137..6502.218 rows=300379 loops=1)
+                                       Hash Key: lineitem.l_suppkey
+                                       ->  Partial HashAggregate  (cost=1160081.48..1163887.90 rows=304513 width=36) (actual time=3944.873..6593.440 rows=299862 loops=1)
+                                             Group Key: lineitem.l_suppkey
+                                             Peak Memory Usage: 0 kB
+                                             ->  Bitmap Heap Scan on lineitem  (cost=612.42..1137350.14 rows=2273134 width=16) (actual time=8.354..1213.903 rows=2295994 loops=1)
+                                                   Recheck Cond: ((l_shipdate >= '1997-05-01'::date) AND (l_shipdate < '1997-08-01 00:00:00'::timestamp without time zone))
+                                                   Rows Removed by Index Recheck: 18315
+                                                   ->  Bitmap Index Scan on lineitem_l_shipdate_idx  (cost=0.00..44.14 rows=2274154 width=0) (actual time=4.950..4.950 rows=110400 loops=1)
+                                                         Index Cond: ((l_shipdate >= '1997-05-01'::date) AND (l_shipdate < '1997-08-01 00:00:00'::timestamp without time zone))
+ Optimizer: Postgres query optimizer
+ Planning Time: 6.408 ms
+   (slice0)    Executor memory: 18643K bytes.
+   (slice1)    Executor memory: 16474K bytes avg x 3 workers, 16486K bytes max (seg2).  Work_mem: 35985K bytes max.
+   (slice2)    Executor memory: 195689K bytes avg x 3 workers, 195860K bytes max (seg0).  Work_mem: 30897K bytes max.
+   (slice3)    Executor memory: 18599K bytes.
+   (slice4)    Executor memory: 15796K bytes avg x 3 workers, 15805K bytes max (seg2).  Work_mem: 35985K bytes max.
+   (slice5)    Executor memory: 195689K bytes avg x 3 workers, 195860K bytes max (seg0).  Work_mem: 30897K bytes max.
+ Memory used:  128000kB
+ Execution Time: 14599.588 ms
+(55 rows)
+
+DROP VIEW

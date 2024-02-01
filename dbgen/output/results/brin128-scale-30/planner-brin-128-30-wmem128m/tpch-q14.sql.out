@@ -1,0 +1,27 @@
+                                                                                   QUERY PLAN                                                                                   
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=1242896.29..1242896.30 rows=1 width=32) (actual time=3230.998..3231.000 rows=1 loops=1)
+   ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=1242896.20..1242896.25 rows=3 width=64) (actual time=3206.659..3230.967 rows=3 loops=1)
+         ->  Partial Aggregate  (cost=1242896.20..1242896.21 rows=1 width=64) (actual time=3204.722..3204.725 rows=1 loops=1)
+               ->  Hash Join  (cost=1184326.75..1230339.43 rows=717529 width=33) (actual time=904.524..2593.960 rows=748754 loops=1)
+                     Hash Cond: (part.p_partkey = lineitem.l_partkey)
+                     Extra Text: (seg0)   Hash chain length 3.1 avg, 16 max, using 237865 of 262144 buckets.
+                     ->  Seq Scan on part  (cost=0.00..30155.00 rows=2000000 width=25) (actual time=0.084..466.953 rows=2001127 loops=1)
+                     ->  Hash  (cost=1175357.63..1175357.63 rows=717529 width=16) (actual time=903.039..903.039 rows=748754 loops=1)
+                           Buckets: 262144  Batches: 1  Memory Usage: 39347kB
+                           ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=197.97..1175357.63 rows=717529 width=16) (actual time=28.294..713.556 rows=748754 loops=1)
+                                 Hash Key: lineitem.l_partkey
+                                 ->  Bitmap Heap Scan on lineitem  (cost=197.97..1161007.05 rows=717529 width=16) (actual time=7.483..565.068 rows=748419 loops=1)
+                                       Recheck Cond: ((l_shipdate >= '1996-04-01'::date) AND (l_shipdate < '1996-05-01 00:00:00'::timestamp without time zone))
+                                       Rows Removed by Index Recheck: 56596
+                                       ->  Bitmap Index Scan on lineitem_l_shipdate_idx  (cost=0.00..18.59 rows=724501 width=0) (actual time=3.845..3.846 rows=39680 loops=1)
+                                             Index Cond: ((l_shipdate >= '1996-04-01'::date) AND (l_shipdate < '1996-05-01 00:00:00'::timestamp without time zone))
+ Optimizer: Postgres query optimizer
+ Planning Time: 4.488 ms
+   (slice0)    Executor memory: 79K bytes.
+   (slice1)    Executor memory: 41639K bytes avg x 3 workers, 41680K bytes max (seg0).  Work_mem: 39347K bytes max.
+   (slice2)    Executor memory: 63841K bytes avg x 3 workers, 65891K bytes max (seg1).
+ Memory used:  128000kB
+ Execution Time: 3237.987 ms
+(23 rows)
+

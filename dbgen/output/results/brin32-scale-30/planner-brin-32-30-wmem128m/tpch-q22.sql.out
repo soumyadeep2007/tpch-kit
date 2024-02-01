@@ -1,0 +1,52 @@
+                                                                                      QUERY PLAN                                                                                      
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=740269.54..740270.11 rows=25 width=72) (actual time=12563.316..12563.320 rows=7 loops=1)
+   Merge Key: ("substring"((customer.c_phone)::text, 1, 2))
+   InitPlan 1 (returns $0)  (slice4)
+     ->  Finalize Aggregate  (cost=9946.68..9946.69 rows=1 width=32) (actual time=670.243..670.244 rows=1 loops=1)
+           ->  Gather Motion 3:1  (slice5; segments: 3)  (cost=9946.61..9946.66 rows=3 width=32) (actual time=666.272..670.219 rows=3 loops=1)
+                 ->  Partial Aggregate  (cost=9946.61..9946.62 rows=1 width=32) (actual time=664.166..664.168 rows=1 loops=1)
+                       ->  Bitmap Heap Scan on customer customer_1  (cost=402.33..9921.58 rows=10015 width=6) (actual time=235.373..571.067 rows=382728 loops=1)
+                             Recheck Cond: (("substring"((c_phone)::text, 1, 2) = ANY ('{25,30,13,20,17,19,32}'::text[])) AND (c_acctbal > 0.00))
+                             ->  Bitmap Index Scan on customer_ios_test1  (cost=0.00..399.82 rows=9552 width=0) (actual time=233.600..233.601 rows=382728 loops=1)
+                                   Index Cond: (("substring"((c_phone)::text, 1, 2) = ANY ('{25,30,13,20,17,19,32}'::text[])) AND (c_acctbal > 0.00))
+   ->  GroupAggregate  (cost=740269.54..740269.77 rows=8 width=72) (actual time=12541.542..12562.261 rows=3 loops=1)
+         Group Key: ("substring"((customer.c_phone)::text, 1, 2))
+         ->  Sort  (cost=740269.54..740269.56 rows=8 width=38) (actual time=12531.434..12536.824 rows=82147 loops=1)
+               Sort Key: ("substring"((customer.c_phone)::text, 1, 2))
+               Sort Method:  quicksort  Memory: 16625kB
+               Executor Memory: 12143kB  Segments: 3  Max: 5643kB (segment 1)
+               ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=718823.76..740269.41 rows=8 width=38) (actual time=9075.671..12513.873 rows=82147 loops=1)
+                     Hash Key: ("substring"((customer.c_phone)::text, 1, 2))
+                     ->  Hash Anti Join  (cost=718823.76..740269.24 rows=8 width=38) (actual time=8931.575..12500.519 rows=63889 loops=1)
+                           Hash Cond: (customer.c_custkey = orders.o_custkey)
+                           Extra Text: (seg2)   Initial batch 0:
+ (seg2)     Wrote 340870K bytes to inner workfile.
+ (seg2)     Wrote 8684K bytes to outer workfile.
+ (seg2)   Initial batches 1..31:
+ (seg2)     Read 340870K bytes from inner workfile: 10996K avg x 31 nonempty batches, 11114K max.
+ (seg2)     Read 8684K bytes from outer workfile: 281K avg x 31 nonempty batches, 288K max.
+ (seg2)   Work file set: 31 files (0 compressed), max file size 11370496, min file size 32768, compression buffer size 0 bytes
+ (seg2)   Hash chain length 15.9 avg, 122 max, using 943175 of 8388608 buckets.
+                           ->  Bitmap Heap Scan on customer  (cost=163.76..6921.69 rows=6062 width=26) (actual time=183.523..500.570 rows=191505 loops=1)
+                                 Recheck Cond: (("substring"((c_phone)::text, 1, 2) = ANY ('{25,30,13,20,17,19,32}'::text[])) AND (c_acctbal > $0))
+                                 ->  Bitmap Index Scan on customer_ios_test1  (cost=0.00..162.24 rows=3500 width=0) (actual time=181.742..181.743 rows=191505 loops=1)
+                                       Index Cond: (("substring"((c_phone)::text, 1, 2) = ANY ('{25,30,13,20,17,19,32}'::text[])) AND (c_acctbal > $0))
+                           ->  Hash  (cost=516511.00..516511.00 rows=15000000 width=4) (actual time=8707.369..8707.369 rows=15011435 loops=1)
+                                 Buckets: 262144  Batches: 32  Memory Usage: 18549kB
+                                 ->  Redistribute Motion 3:3  (slice3; segments: 3)  (cost=0.00..516511.00 rows=15000000 width=4) (actual time=0.078..6122.828 rows=15011435 loops=1)
+                                       Hash Key: orders.o_custkey
+                                       ->  Seq Scan on orders  (cost=0.00..216511.00 rows=15000000 width=4) (actual time=0.048..4041.249 rows=15003291 loops=1)
+ Optimizer: Postgres-based planner
+ Planning Time: 12.749 ms
+   (slice0)    Executor memory: 203K bytes.
+   (slice1)    Executor memory: 4106K bytes avg x 3 workers, 5701K bytes max (seg1).  Work_mem: 5643K bytes max.
+ * (slice2)    Executor memory: 218273K bytes avg x 3 workers, 218316K bytes max (seg0).  Work_mem: 18549K bytes max, 529794K bytes wanted.
+   (slice3)    Executor memory: 38K bytes avg x 3 workers, 38K bytes max (seg0).
+   (slice4)    Executor memory: 172K bytes.
+   (slice5)    Executor memory: 196862K bytes avg x 3 workers, 196862K bytes max (seg0).
+ Memory used:  128000kB
+ Memory wanted:  2120275kB
+ Execution Time: 13249.998 ms
+(48 rows)
+

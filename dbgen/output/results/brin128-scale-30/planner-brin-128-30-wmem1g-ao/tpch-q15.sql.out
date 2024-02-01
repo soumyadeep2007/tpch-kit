@@ -1,0 +1,66 @@
+CREATE VIEW
+                                                                                                                       QUERY PLAN                                                                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=1029462.01..1029466.45 rows=313 width=103) (actual time=11304.174..11304.180 rows=1 loops=1)
+   Merge Key: supplier.s_suppkey
+   InitPlan 1 (returns $0)  (slice3)
+     ->  Finalize Aggregate  (cost=1026902.20..1026902.21 rows=1 width=32) (actual time=11346.656..11346.656 rows=1 loops=1)
+           ->  Gather Motion 3:1  (slice4; segments: 3)  (cost=1026902.15..1026902.20 rows=3 width=32) (actual time=11340.481..11346.638 rows=3 loops=1)
+                 ->  Partial Aggregate  (cost=1026902.15..1026902.16 rows=1 width=32) (actual time=11338.202..11338.203 rows=1 loops=1)
+                       ->  Finalize HashAggregate  (cost=1024290.08..1025596.11 rows=104483 width=36) (actual time=11066.366..11332.526 rows=100172 loops=1)
+                             Group Key: lineitem_1.l_suppkey
+                             Extra Text: (seg0)   hash table(s): 1; 99877 groups total in 4 batches, 632408 spill partitions; disk usage: 14080KB; chain length 2.2 avg, 7 max; using 99877 of 655360 buckets; total 0 expansions.
+ 
+                             ->  Redistribute Motion 3:3  (slice5; segments: 3)  (cost=1011753.45..1021939.46 rows=313416 width=36) (actual time=8287.456..10697.823 rows=300379 loops=1)
+                                   Hash Key: lineitem_1.l_suppkey
+                                   ->  Partial HashAggregate  (cost=1011753.45..1015671.15 rows=313416 width=36) (actual time=8283.884..10873.738 rows=299862 loops=1)
+                                         Group Key: lineitem_1.l_suppkey
+                                         Extra Text: (seg0)   hash table(s): 1; 299859 groups total in 20 batches, 7424108 spill partitions; disk usage: 77632KB; chain length 2.1 avg, 5 max; using 299859 of 5505024 buckets; total 0 expansions.
+ 
+                                         ->  Bitmap Heap Scan on lineitem lineitem_1  (cost=603.67..988089.24 rows=2366421 width=16) (actual time=1444.674..6053.746 rows=2295994 loops=1)
+                                               Recheck Cond: ((l_shipdate >= '1997-05-01'::date) AND (l_shipdate < '1997-08-01 00:00:00'::timestamp without time zone))
+                                               Rows Removed by Index Recheck: 7365461
+                                               ->  Bitmap Index Scan on lineitem_l_shipdate_idx  (cost=0.00..12.07 rows=2852030 width=0) (actual time=1.382..1.383 rows=2960 loops=1)
+                                                     Index Cond: ((l_shipdate >= '1997-05-01'::date) AND (l_shipdate < '1997-08-01 00:00:00'::timestamp without time zone))
+   ->  Sort  (cost=1029462.01..1029462.27 rows=104 width=103) (actual time=11303.456..11303.460 rows=1 loops=1)
+         Sort Key: supplier.s_suppkey
+         Sort Method:  quicksort  Memory: 75kB
+         Executor Memory: 177kB  Segments: 3  Max: 59kB (segment 0)
+         ->  Hash Join  (cost=1027687.96..1029458.50 rows=104 width=103) (actual time=11266.027..11303.380 rows=1 loops=1)
+               Hash Cond: (supplier.s_suppkey = revenue0.supplier_no)
+               Extra Text: (seg0)   Hash chain length 1.0 avg, 1 max, using 1 of 65536 buckets.
+               ->  Seq Scan on supplier  (cost=0.00..1507.00 rows=100000 width=71) (actual time=0.305..40.142 rows=99877 loops=1)
+               ->  Hash  (cost=1027686.65..1027686.65 rows=104 width=36) (actual time=11248.254..11248.255 rows=1 loops=1)
+                     Buckets: 65536  Batches: 1  Memory Usage: 513kB
+                     ->  Subquery Scan on revenue0  (cost=1025857.16..1027686.65 rows=104 width=36) (actual time=11190.278..11248.249 rows=1 loops=1)
+                           ->  Finalize HashAggregate  (cost=1025857.16..1027685.61 rows=104 width=36) (actual time=11190.276..11248.245 rows=1 loops=1)
+                                 Group Key: lineitem.l_suppkey
+                                 Filter: (sum((lineitem.l_extendedprice * ('1'::numeric - lineitem.l_discount))) = $0)
+                                 Rows Removed by Filter: 99876
+                                 Extra Text: (seg0)   hash table(s): 1; 99877 groups total in 4 batches, 629828 spill partitions; disk usage: 14080KB; chain length 2.2 avg, 7 max; using 99877 of 655360 buckets; total 0 expansions.
+ 
+                                 ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=1011753.45..1021939.46 rows=313416 width=36) (actual time=8216.757..10613.611 rows=300379 loops=1)
+                                       Hash Key: lineitem.l_suppkey
+                                       ->  Partial HashAggregate  (cost=1011753.45..1015671.15 rows=313416 width=36) (actual time=8216.612..10801.951 rows=299862 loops=1)
+                                             Group Key: lineitem.l_suppkey
+                                             Extra Text: (seg0)   hash table(s): 1; 299859 groups total in 20 batches, 7424108 spill partitions; disk usage: 77632KB; chain length 2.1 avg, 5 max; using 299859 of 5505024 buckets; total 0 expansions.
+ 
+                                             ->  Bitmap Heap Scan on lineitem  (cost=603.67..988089.24 rows=2366421 width=16) (actual time=1444.658..5991.392 rows=2295994 loops=1)
+                                                   Recheck Cond: ((l_shipdate >= '1997-05-01'::date) AND (l_shipdate < '1997-08-01 00:00:00'::timestamp without time zone))
+                                                   Rows Removed by Index Recheck: 7365461
+                                                   ->  Bitmap Index Scan on lineitem_l_shipdate_idx  (cost=0.00..12.07 rows=2852030 width=0) (actual time=0.337..0.338 rows=2960 loops=1)
+                                                         Index Cond: ((l_shipdate >= '1997-05-01'::date) AND (l_shipdate < '1997-08-01 00:00:00'::timestamp without time zone))
+ Optimizer: Postgres-based planner
+ Planning Time: 6.959 ms
+   (slice0)    Executor memory: 18627K bytes.
+ * (slice1)    Executor memory: 16535K bytes avg x 3 workers, 16545K bytes max (seg2).  Work_mem: 35985K bytes max, 68625K bytes wanted.
+ * (slice2)    Executor memory: 21487K bytes avg x 3 workers, 21490K bytes max (seg0).  Work_mem: 30897K bytes max, 137233K bytes wanted.
+   (slice3)    Executor memory: 18589K bytes.
+ * (slice4)    Executor memory: 15796K bytes avg x 3 workers, 15806K bytes max (seg2).  Work_mem: 35985K bytes max, 68625K bytes wanted.
+ * (slice5)    Executor memory: 21487K bytes avg x 3 workers, 21490K bytes max (seg0).  Work_mem: 30897K bytes max, 137233K bytes wanted.
+ Memory used:  128000kB
+ Memory wanted:  1098956kB
+ Execution Time: 22667.762 ms
+(60 rows)
+
+DROP VIEW
