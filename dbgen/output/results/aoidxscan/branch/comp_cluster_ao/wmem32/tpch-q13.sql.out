@@ -1,0 +1,26 @@
+                                                                QUERY PLAN                                                                
+------------------------------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=2975037.22..2975051.39 rows=1000 width=16)
+   Merge Key: (count(*)), (count(orders.o_orderkey))
+   ->  Sort  (cost=2975037.22..2975038.05 rows=333 width=16)
+         Sort Key: (count(*)) DESC, (count(orders.o_orderkey)) DESC
+         ->  Finalize HashAggregate  (cost=2975019.92..2975023.25 rows=333 width=16)
+               Group Key: (count(orders.o_orderkey))
+               ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=2974984.92..2975014.92 rows=1000 width=16)
+                     Hash Key: (count(orders.o_orderkey))
+                     ->  Partial HashAggregate  (cost=2974984.92..2974994.92 rows=1000 width=16)
+                           Group Key: count(orders.o_orderkey)
+                           ->  HashAggregate  (cost=2919544.28..2952484.92 rows=1500000 width=12)
+                                 Group Key: customer.c_custkey
+                                 Planned Partitions: 8
+                                 ->  Hash Right Join  (cost=283502.09..2774296.89 rows=14696970 width=12)
+                                       Hash Cond: (orders.o_custkey = customer.c_custkey)
+                                       ->  Redistribute Motion 3:3  (slice3; segments: 3)  (cost=0.00..2301826.62 rows=14696970 width=12)
+                                             Hash Key: orders.o_custkey
+                                             ->  Seq Scan on orders  (cost=0.00..2007887.23 rows=14696970 width=12)
+                                                   Filter: ((o_comment)::text !~~ '%express%accounts%'::text)
+                                       ->  Hash  (cost=264752.09..264752.09 rows=1500000 width=4)
+                                             ->  Seq Scan on customer  (cost=0.00..264752.09 rows=1500000 width=4)
+ Optimizer: Postgres-based planner
+(22 rows)
+

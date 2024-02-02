@@ -1,0 +1,28 @@
+                                                                                       QUERY PLAN                                                                                       
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize GroupAggregate  (cost=4204114.69..4204115.03 rows=5 width=24)
+   Group Key: orders.o_orderpriority
+   ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=4204114.69..4204114.91 rows=15 width=24)
+         Merge Key: orders.o_orderpriority
+         ->  Sort  (cost=4204114.69..4204114.71 rows=5 width=24)
+               Sort Key: orders.o_orderpriority
+               ->  Partial HashAggregate  (cost=4204114.58..4204114.63 rows=5 width=24)
+                     Group Key: orders.o_orderpriority
+                     ->  HashAggregate  (cost=4199933.15..4202720.77 rows=278762 width=16)
+                           Group Key: (RowIdExpr)
+                           ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=3261029.45..4199236.25 rows=278762 width=16)
+                                 Hash Key: (RowIdExpr)
+                                 ->  Hash Join  (cost=3261029.45..4193661.00 rows=278762 width=16)
+                                       Hash Cond: (lineitem.l_orderkey = orders.o_orderkey)
+                                       ->  Bitmap Heap Scan on lineitem  (cost=2907512.40..3743688.30 rows=19999819 width=8)
+                                             Recheck Cond: (l_commitdate < l_receiptdate)
+                                             ->  Bitmap Index Scan on lineitem_l_orderkey_idx_part1  (cost=0.00..2902512.44 rows=19999819 width=0)
+                                       ->  Hash  (cost=333123.96..333123.96 rows=1631448 width=24)
+                                             ->  Broadcast Motion 3:3  (slice3; segments: 3)  (cost=85709.81..333123.96 rows=1631448 width=24)
+                                                   ->  Bitmap Heap Scan on orders  (cost=85709.81..311371.32 rows=543816 width=24)
+                                                         Recheck Cond: ((o_orderdate >= '1996-09-01'::date) AND (o_orderdate < '1996-12-01 00:00:00'::timestamp without time zone))
+                                                         ->  Bitmap Index Scan on orders_o_orderdate_idx  (cost=0.00..85573.85 rows=543816 width=0)
+                                                               Index Cond: ((o_orderdate >= '1996-09-01'::date) AND (o_orderdate < '1996-12-01 00:00:00'::timestamp without time zone))
+ Optimizer: Postgres-based planner
+(24 rows)
+

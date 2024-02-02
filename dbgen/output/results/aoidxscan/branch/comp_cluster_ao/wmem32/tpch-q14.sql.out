@@ -1,0 +1,16 @@
+                                                                          QUERY PLAN                                                                          
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=899073.42..899073.44 rows=1 width=32)
+   ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=899073.34..899073.39 rows=3 width=64)
+         ->  Partial Aggregate  (cost=899073.34..899073.35 rows=1 width=64)
+               ->  Hash Join  (cost=574629.47..887634.07 rows=653672 width=33)
+                     Hash Cond: (part.p_partkey = lineitem.l_partkey)
+                     ->  Seq Scan on part  (cost=0.00..297959.20 rows=2000000 width=25)
+                     ->  Hash  (cost=566076.94..566076.94 rows=684203 width=16)
+                           ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=0.19..566076.94 rows=684203 width=16)
+                                 Hash Key: lineitem.l_partkey
+                                 ->  Index Scan using lineitem_l_shipdate_idx on lineitem  (cost=0.19..552392.88 rows=684203 width=16)
+                                       Index Cond: ((l_shipdate >= '1996-04-01'::date) AND (l_shipdate < '1996-05-01 00:00:00'::timestamp without time zone))
+ Optimizer: Postgres-based planner
+(12 rows)
+

@@ -1,0 +1,13 @@
+                                                                    QUERY PLAN                                                                    
+--------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=2975445.26..2975445.27 rows=1 width=32)
+   ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=2975445.19..2975445.24 rows=3 width=32)
+         ->  Partial Aggregate  (cost=2975445.19..2975445.20 rows=1 width=32)
+               ->  Bitmap Heap Scan on lineitem  (cost=1534049.93..2956652.36 rows=3758566 width=12)
+                     Recheck Cond: ((l_shipdate >= '1995-01-01'::date) AND (l_shipdate < '1996-01-01 00:00:00'::timestamp without time zone))
+                     Filter: ((l_discount >= 0.03) AND (l_discount <= 0.05) AND (l_quantity < '25'::numeric))
+                     ->  Bitmap Index Scan on lineitem_l_shipdate_idx  (cost=0.00..1533110.29 rows=9209982 width=0)
+                           Index Cond: ((l_shipdate >= '1995-01-01'::date) AND (l_shipdate < '1996-01-01 00:00:00'::timestamp without time zone))
+ Optimizer: Postgres-based planner
+(9 rows)
+

@@ -1,0 +1,28 @@
+                                                                                                                                                                                                                                                                                                                                                                           QUERY PLAN                                                                                                                                                                                                                                                                                                                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=4168529.84..4168529.85 rows=1 width=32)
+   ->  Gather Motion 3:1  (slice1; segments: 3)  (cost=4168529.77..4168529.82 rows=3 width=32)
+         ->  Partial Aggregate  (cost=4168529.77..4168529.78 rows=1 width=32)
+               ->  Hash Join  (cost=2295095.22..4168505.15 rows=3283 width=12)
+                     Hash Cond: (lineitem.l_partkey = part.p_partkey)
+                     Join Filter: (((part.p_brand = 'Brand#15'::bpchar) AND (part.p_container = ANY ('{"SM CASE","SM BOX","SM PACK","SM PKG"}'::bpchar[])) AND (lineitem.l_quantity >= '4'::numeric) AND (lineitem.l_quantity <= '14'::numeric) AND (part.p_size <= 5)) OR ((part.p_brand = 'Brand#24'::bpchar) AND (part.p_container = ANY ('{"MED BAG","MED BOX","MED PKG","MED PACK"}'::bpchar[])) AND (lineitem.l_quantity >= '11'::numeric) AND (lineitem.l_quantity <= '21'::numeric) AND (part.p_size <= 10)) OR ((part.p_brand = 'Brand#51'::bpchar) AND (part.p_container = ANY ('{"LG CASE","LG BOX","LG PACK","LG PKG"}'::bpchar[])) AND (lineitem.l_quantity >= '22'::numeric) AND (lineitem.l_quantity <= '32'::numeric) AND (part.p_size <= 15)))
+                     ->  Bitmap Heap Scan on lineitem  (cost=2285938.24..4150153.80 rows=3490108 width=21)
+                           Recheck Cond: (l_shipmode = ANY ('{AIR,"AIR REG"}'::bpchar[]))
+                           Filter: ((l_shipinstruct = 'DELIVER IN PERSON'::bpchar) AND (((l_quantity >= '4'::numeric) AND (l_quantity <= '14'::numeric)) OR ((l_quantity >= '11'::numeric) AND (l_quantity <= '21'::numeric)) OR ((l_quantity >= '22'::numeric) AND (l_quantity <= '32'::numeric))))
+                           ->  Bitmap Index Scan on lineitem_l_partkey_l_quantity_l_shipmode_idx  (cost=0.00..2285065.71 rows=8669922 width=0)
+                                 Index Cond: (l_shipmode = ANY ('{AIR,"AIR REG"}'::bpchar[]))
+                     ->  Hash  (cost=8980.32..8980.32 rows=14133 width=30)
+                           ->  Broadcast Motion 3:3  (slice2; segments: 3)  (cost=4489.43..8980.32 rows=14133 width=30)
+                                 ->  Bitmap Heap Scan on part  (cost=4489.43..8791.89 rows=4711 width=30)
+                                       Recheck Cond: (((p_container = ANY ('{"SM CASE","SM BOX","SM PACK","SM PKG"}'::bpchar[])) AND (p_brand = 'Brand#15'::bpchar)) OR ((p_container = ANY ('{"MED BAG","MED BOX","MED PKG","MED PACK"}'::bpchar[])) AND (p_brand = 'Brand#24'::bpchar)) OR ((p_container = ANY ('{"LG CASE","LG BOX","LG PACK","LG PKG"}'::bpchar[])) AND (p_brand = 'Brand#51'::bpchar)))
+                                       Filter: ((p_size >= 1) AND (((p_brand = 'Brand#15'::bpchar) AND (p_container = ANY ('{"SM CASE","SM BOX","SM PACK","SM PKG"}'::bpchar[])) AND (p_size <= 5)) OR ((p_brand = 'Brand#24'::bpchar) AND (p_container = ANY ('{"MED BAG","MED BOX","MED PKG","MED PACK"}'::bpchar[])) AND (p_size <= 10)) OR ((p_brand = 'Brand#51'::bpchar) AND (p_container = ANY ('{"LG CASE","LG BOX","LG PACK","LG PKG"}'::bpchar[])) AND (p_size <= 15))))
+                                       ->  BitmapOr  (cost=4489.43..4489.43 rows=23564 width=0)
+                                             ->  Bitmap Index Scan on part_p_container_p_brand_p_partkey_idx  (cost=0.00..1467.62 rows=7776 width=0)
+                                                   Index Cond: ((p_container = ANY ('{"SM CASE","SM BOX","SM PACK","SM PKG"}'::bpchar[])) AND (p_brand = 'Brand#15'::bpchar))
+                                             ->  Bitmap Index Scan on part_p_container_p_brand_p_partkey_idx  (cost=0.00..1517.18 rows=7895 width=0)
+                                                   Index Cond: ((p_container = ANY ('{"MED BAG","MED BOX","MED PKG","MED PACK"}'::bpchar[])) AND (p_brand = 'Brand#24'::bpchar))
+                                             ->  Bitmap Index Scan on part_p_container_p_brand_p_partkey_idx  (cost=0.00..1501.10 rows=7892 width=0)
+                                                   Index Cond: ((p_container = ANY ('{"LG CASE","LG BOX","LG PACK","LG PKG"}'::bpchar[])) AND (p_brand = 'Brand#51'::bpchar))
+ Optimizer: Postgres-based planner
+(24 rows)
+

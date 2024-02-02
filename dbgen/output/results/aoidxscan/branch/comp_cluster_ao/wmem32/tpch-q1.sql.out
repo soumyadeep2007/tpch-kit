@@ -1,0 +1,17 @@
+                                                     QUERY PLAN                                                     
+--------------------------------------------------------------------------------------------------------------------
+ Gather Motion 3:1  (slice1; segments: 3)  (cost=10991766.41..10991766.50 rows=6 width=236)
+   Merge Key: l_returnflag, l_linestatus
+   ->  Sort  (cost=10991766.41..10991766.42 rows=2 width=236)
+         Sort Key: l_returnflag, l_linestatus
+         ->  Finalize HashAggregate  (cost=10991766.35..10991766.40 rows=2 width=236)
+               Group Key: l_returnflag, l_linestatus
+               ->  Redistribute Motion 3:3  (slice2; segments: 3)  (cost=10991765.81..10991766.09 rows=6 width=236)
+                     Hash Key: l_returnflag, l_linestatus
+                     ->  Partial HashAggregate  (cost=10991765.81..10991765.97 rows=6 width=236)
+                           Group Key: l_returnflag, l_linestatus
+                           ->  Seq Scan on lineitem  (cost=0.00..8592021.30 rows=59993613 width=25)
+                                 Filter: (l_shipdate <= '1998-11-30 23:58:15'::timestamp without time zone)
+ Optimizer: Postgres-based planner
+(13 rows)
+
